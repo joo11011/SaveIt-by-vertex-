@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "468584920205",
+    "project_id": "saveit-by-vertex",
+    "storage_bucket": "saveit-by-vertex.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:468584920205:android:5443a58ccc420435759ec4",
+        "android_client_info": {
+          "package_name": "com.example.final_project"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "468584920205-a4fp5djo9jdbfioogm6gssj9g09785ch.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjKCqu8ICh2m_H8ncsyELoU5XscTKEhtQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "468584920205-a4fp5djo9jdbfioogm6gssj9g09785ch.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "468584920205-u88cd76l82htu2gbjsbj4tcmmrsgcp4p.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.finalProject"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
