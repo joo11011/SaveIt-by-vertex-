@@ -56,27 +56,28 @@ class FirestoreService {
         .orderBy('dueDate', descending: false)
         .snapshots()
         .map((snapshot) {
-      try {
-        return snapshot.docs
-            .map((doc) {
           try {
-            return InstallmentModel.fromMap(doc.data(), doc.id);
+            return snapshot.docs
+                .map((doc) {
+                  try {
+                    return InstallmentModel.fromMap(doc.data(), doc.id);
+                  } catch (e) {
+                    debugPrint('Error parsing installment ${doc.id}: $e');
+                    return null;
+                  }
+                })
+                .where((installment) => installment != null)
+                .cast<InstallmentModel>()
+                .toList();
           } catch (e) {
-            debugPrint('Error parsing installment ${doc.id}: $e');
-            return null;
+            debugPrint('Error processing installments stream: $e');
+            return <InstallmentModel>[];
           }
         })
-            .where((installment) => installment != null)
-            .cast<InstallmentModel>()
-            .toList();
-      } catch (e) {
-        debugPrint('Error processing installments stream: $e');
-        return <InstallmentModel>[];
-      }
-    }).handleError((error) {
-      debugPrint('Installments stream error: $error');
-      return <InstallmentModel>[];
-    });
+        .handleError((error) {
+          debugPrint('Installments stream error: $error');
+          return <InstallmentModel>[];
+        });
   }
 
   // Get user financial data stream
@@ -96,57 +97,59 @@ class FirestoreService {
         .doc(_userId)
         .snapshots()
         .map((snapshot) {
-      try {
-        if (snapshot.exists) {
-          Map<String, dynamic> data = snapshot.data() ?? {};
+          try {
+            if (snapshot.exists) {
+              Map<String, dynamic> data = snapshot.data() ?? {};
 
+              return {
+                'balance': (data['balance'] ?? 0.0).toDouble(),
+                'income': (data['income'] ?? 0.0).toDouble(),
+                'expenses': (data['expenses'] ?? 0.0).toDouble(),
+                'savings': (data['savings'] ?? 0.0).toDouble(),
+                'totalInstallments': (data['totalInstallments'] ?? 0.0)
+                    .toDouble(),
+                'currency': data['currency'] ?? 'SAR',
+                'username': data['username'] ?? '',
+                'email': data['email'] ?? '',
+              };
+            }
+            return {
+              'balance': 0.0,
+              'income': 0.0,
+              'expenses': 0.0,
+              'savings': 0.0,
+              'totalInstallments': 0.0,
+              'currency': 'SAR',
+              'username': '',
+              'email': '',
+            };
+          } catch (e) {
+            debugPrint('Error processing user financials: $e');
+            return {
+              'balance': 0.0,
+              'income': 0.0,
+              'expenses': 0.0,
+              'savings': 0.0,
+              'totalInstallments': 0.0,
+              'currency': 'SAR',
+              'username': '',
+              'email': '',
+            };
+          }
+        })
+        .handleError((error) {
+          debugPrint('User financials stream error: $error');
           return {
-            'balance': (data['balance'] ?? 0.0).toDouble(),
-            'income': (data['income'] ?? 0.0).toDouble(),
-            'expenses': (data['expenses'] ?? 0.0).toDouble(),
-            'savings': (data['savings'] ?? 0.0).toDouble(),
-            'totalInstallments': (data['totalInstallments'] ?? 0.0).toDouble(),
-            'currency': data['currency'] ?? 'SAR',
-            'username': data['username'] ?? '',
-            'email': data['email'] ?? '',
+            'balance': 0.0,
+            'income': 0.0,
+            'expenses': 0.0,
+            'savings': 0.0,
+            'totalInstallments': 0.0,
+            'currency': 'SAR',
+            'username': '',
+            'email': '',
           };
-        }
-        return {
-          'balance': 0.0,
-          'income': 0.0,
-          'expenses': 0.0,
-          'savings': 0.0,
-          'totalInstallments': 0.0,
-          'currency': 'SAR',
-          'username': '',
-          'email': '',
-        };
-      } catch (e) {
-        debugPrint('Error processing user financials: $e');
-        return {
-          'balance': 0.0,
-          'income': 0.0,
-          'expenses': 0.0,
-          'savings': 0.0,
-          'totalInstallments': 0.0,
-          'currency': 'SAR',
-          'username': '',
-          'email': '',
-        };
-      }
-    }).handleError((error) {
-      debugPrint('User financials stream error: $error');
-      return {
-        'balance': 0.0,
-        'income': 0.0,
-        'expenses': 0.0,
-        'savings': 0.0,
-        'totalInstallments': 0.0,
-        'currency': 'SAR',
-        'username': '',
-        'email': '',
-      };
-    });
+        });
   }
 
   // Update user financial data
@@ -164,7 +167,10 @@ class FirestoreService {
       double totalInstallments = 0.0;
       for (var doc in installmentsSnapshot.docs) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        totalInstallments += (data['totalAmount'] ?? 0.0).toDouble();
+        // Only count unpaid installments
+        if (!(data['isPaid'] ?? false)) {
+          totalInstallments += (data['totalAmount'] ?? 0.0).toDouble();
+        }
       }
 
       // Get current user data
@@ -285,10 +291,10 @@ class FirestoreService {
           .collection('installments')
           .doc(installmentId)
           .update({
-        'isPaid': true,
-        'paidDate': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+            'isPaid': true,
+            'paidDate': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
 
       await _updateUserFinancials();
       return true;

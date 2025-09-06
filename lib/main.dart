@@ -2,38 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'core/provider/currency_provider.dart';
-// import 'core/services/auth_service.dart';
+import 'core/services/auth_service.dart';
 import 'view/Add_installments_screen/Add_installments_screen.dart';
 import 'view/Balance_screen/Balance_screen.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: "your-api-key",
-      authDomain: "saveit-by-vertex.firebaseapp.com",
-      projectId: "your-project-id",
-      storageBucket: "your-project.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "your-app-id",
-    ),
-  );
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
 
   runApp(const SaveItApp());
 }
 
 class SaveItApp extends StatelessWidget {
   const SaveItApp({super.key, this.isTest = false});
-
   // When true, the app will render a simple test scaffold without hitting Firebase.
   final bool isTest;
 
   @override
   Widget build(BuildContext context) {
     if (isTest) {
-      // Minimal app used by widget tests to avoid Firebase initialization and provide a counter UI
       return MaterialApp(
         title: 'SaveIt (Test)',
         debugShowCheckedModeBanner: false,
@@ -108,7 +101,7 @@ class SaveItHome extends StatefulWidget {
 }
 
 class _SaveItHomeState extends State<SaveItHome> with TickerProviderStateMixin {
-  // final AuthService _authService = AuthService();
+  final AuthService _authService = AuthService();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   bool _isInitializing = true;

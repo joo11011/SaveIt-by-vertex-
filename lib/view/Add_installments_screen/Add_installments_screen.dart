@@ -13,7 +13,8 @@ class AddInstallmentScreen extends StatefulWidget {
 }
 
 class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
-  final TextEditingController _installmentNameController = TextEditingController();
+  final TextEditingController _installmentNameController =
+      TextEditingController();
   final TextEditingController _totalAmountController = TextEditingController();
   final TextEditingController _dueDateController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
@@ -35,7 +36,7 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
     'Loan',
     'Credit Card',
     'Subscription',
-    'Other'
+    'Other',
   ];
 
   @override
@@ -52,7 +53,7 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(),
+      firstDate: DateTime.now(), // Don't allow past dates
       lastDate: DateTime(2101),
       builder: (context, child) {
         return Theme(
@@ -69,7 +70,7 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
       },
     );
 
-    if (picked != null) {
+    if (picked != null && picked.isAfter(DateTime.now())) {
       setState(() {
         _selectedDate = picked;
         _dueDateController.text = DateFormat('MM/dd/yyyy').format(picked);
@@ -78,13 +79,16 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
   }
 
   void _showCurrencyPicker(BuildContext context) {
-    final currencyProvider = Provider.of<CurrencyProvider>(context, listen: false);
+    final currencyProvider = Provider.of<CurrencyProvider>(
+      context,
+      listen: false,
+    );
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Allow the bottom sheet to take more space
+      isScrollControlled: true,
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7, // Limit height
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
       ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -98,17 +102,17 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
             children: [
               const Text(
                 'Select Currency',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               Flexible(
                 child: SingleChildScrollView(
                   child: Column(
-                    children: currencyProvider.availableCurrencies.map((currency) {
-                      Map<String, String> info = currencyProvider.getCurrencyInfo(currency);
+                    children: currencyProvider.availableCurrencies.map((
+                      currency,
+                    ) {
+                      Map<String, String> info = currencyProvider
+                          .getCurrencyInfo(currency);
                       return ListTile(
                         leading: Text(
                           info['flag']!,
@@ -150,10 +154,7 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
             children: [
               const Text(
                 'Select Category',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               Flexible(
@@ -182,10 +183,34 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
 
   Future<void> _addInstallment() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Add additional validation checks
     if (_selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a due date'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Check if category is selected
+    if (_categoryController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a category'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Check if date is not in the past
+    if (_selectedDate!.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Due date cannot be in the past'),
           backgroundColor: Colors.red,
         ),
       );
@@ -197,7 +222,10 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
     });
 
     try {
-      final currencyProvider = Provider.of<CurrencyProvider>(context, listen: false);
+      final currencyProvider = Provider.of<CurrencyProvider>(
+        context,
+        listen: false,
+      );
 
       final installment = InstallmentModel(
         installmentName: _installmentNameController.text.trim(),
@@ -234,11 +262,11 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
-
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   @override
@@ -301,7 +329,10 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
                             hintText: 'e.g. Phone Bill',
                             hintStyle: TextStyle(color: Colors.grey),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
                           ),
                         ),
                       ),
@@ -330,9 +361,16 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
                                 return GestureDetector(
                                   onTap: () => _showCurrencyPicker(context),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 16,
+                                    ),
                                     decoration: BoxDecoration(
-                                      border: Border(right: BorderSide(color: Colors.grey[300]!)),
+                                      border: Border(
+                                        right: BorderSide(
+                                          color: Colors.grey[300]!,
+                                        ),
+                                      ),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -351,7 +389,11 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 4),
-                                        const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 20),
+                                        const Icon(
+                                          Icons.keyboard_arrow_down,
+                                          color: Colors.grey,
+                                          size: 20,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -361,12 +403,16 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
                             Expanded(
                               child: TextFormField(
                                 controller: _totalAmountController,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
                                     return 'Please enter amount';
                                   }
-                                  if (double.tryParse(value) == null || double.parse(value) <= 0) {
+                                  if (double.tryParse(value) == null ||
+                                      double.parse(value) <= 0) {
                                     return 'Please enter valid amount';
                                   }
                                   return null;
@@ -375,7 +421,10 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
                                   hintText: '0.00',
                                   hintStyle: TextStyle(color: Colors.grey),
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 16,
+                                  ),
                                 ),
                               ),
                             ),
@@ -414,8 +463,15 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
                             hintText: 'mm/dd/yyyy',
                             hintStyle: TextStyle(color: Colors.grey),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            suffixIcon: Icon(Icons.calendar_today, color: Colors.grey, size: 20),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            suffixIcon: Icon(
+                              Icons.calendar_today,
+                              color: Colors.grey,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
@@ -451,8 +507,15 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
                             hintText: 'Select or type a category',
                             hintStyle: TextStyle(color: Colors.grey),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            suffixIcon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 20),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            suffixIcon: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: Colors.grey,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
@@ -481,7 +544,10 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
                             hintText: 'Add any relevant notes here...',
                             hintStyle: TextStyle(color: Colors.grey),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
                           ),
                         ),
                       ),
@@ -516,21 +582,21 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
                     ),
                     child: _isLoading
                         ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
                         : const Text(
-                      'Add Installment',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                            'Add Installment',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
               ),

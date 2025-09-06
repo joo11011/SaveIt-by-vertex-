@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../../core/provider/currency_provider.dart';
 import '../../core/services/firestore_service.dart';
+import '../Add_installments_screen/Add_installments_screen.dart';
 
 class BalanceScreen extends StatefulWidget {
   const BalanceScreen({super.key});
@@ -24,13 +25,9 @@ class _BalanceScreenState extends State<BalanceScreen>
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    _progressAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
     _animationController.forward();
   }
 
@@ -85,26 +82,57 @@ class _BalanceScreenState extends State<BalanceScreen>
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const Icon(Icons.keyboard_arrow_down, color: Colors.black, size: 16),
+                    const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: Colors.black,
+                      size: 16,
+                    ),
                   ],
                 ),
-                onSelected: (String currency) {
-                  currencyProvider.setCurrency(currency);
+                onSelected: (String currency) async {
+                  bool success = await currencyProvider.setCurrency(currency);
+                  if (!success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to change currency'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 },
                 itemBuilder: (BuildContext context) {
-                  return currencyProvider.availableCurrencies.map((String currency) {
-                    Map<String, String> info = currencyProvider.getCurrencyInfo(currency);
+                  return currencyProvider.availableCurrencies.map((
+                    String currency,
+                  ) {
+                    Map<String, String> info = currencyProvider.getCurrencyInfo(
+                      currency,
+                    );
                     return PopupMenuItem<String>(
                       value: currency,
                       child: Row(
                         children: [
-                          Text(info['flag']!, style: const TextStyle(fontSize: 18)),
+                          Text(
+                            info['flag']!,
+                            style: const TextStyle(fontSize: 18),
+                          ),
                           const SizedBox(width: 8),
                           Text(currency),
                           const SizedBox(width: 8),
-                          Expanded(child: Text(info['name']!, style: const TextStyle(fontSize: 12, color: Colors.grey))),
+                          Expanded(
+                            child: Text(
+                              info['name']!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
                           if (currencyProvider.selectedCurrency == currency)
-                            const Icon(Icons.check, color: Color(0xFF4CAF50), size: 16),
+                            const Icon(
+                              Icons.check,
+                              color: Color(0xFF4CAF50),
+                              size: 16,
+                            ),
                         ],
                       ),
                     );
@@ -120,9 +148,7 @@ class _BalanceScreenState extends State<BalanceScreen>
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF4CAF50),
-              ),
+              child: CircularProgressIndicator(color: Color(0xFF4CAF50)),
             );
           }
 
@@ -134,8 +160,9 @@ class _BalanceScreenState extends State<BalanceScreen>
                   const Icon(Icons.error_outline, size: 64, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
-                    'Error loading data',
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                    'Error loading data: ${snapshot.error}',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton(
@@ -150,13 +177,17 @@ class _BalanceScreenState extends State<BalanceScreen>
           }
 
           Map<String, dynamic> userData = snapshot.data ?? {};
-          double balance = (userData['balance'] ?? 2750.0).toDouble();
-          double income = (userData['income'] ?? 2000.0).toDouble();
-          double expenses = (userData['expenses'] ?? 500.0).toDouble();
-          double savings = (userData['savings'] ?? 250.0).toDouble();
-          double totalInstallments = (userData['totalInstallments'] ?? 0.0).toDouble();
+          double balance = (userData['balance'] ?? 0.0).toDouble();
+          double income = (userData['income'] ?? 0.0).toDouble();
+          double expenses = (userData['expenses'] ?? 0.0).toDouble();
+          double savings = (userData['savings'] ?? 0.0).toDouble();
+          double totalInstallments = (userData['totalInstallments'] ?? 0.0)
+              .toDouble();
 
-          double allocationPercentage = _calculateAllocationPercentage(balance, income);
+          double allocationPercentage = _calculateAllocationPercentage(
+            balance,
+            income,
+          );
 
           return Consumer<CurrencyProvider>(
             builder: (context, currencyProvider, child) {
@@ -202,7 +233,9 @@ class _BalanceScreenState extends State<BalanceScreen>
                               value: 1.0,
                               strokeWidth: 12,
                               backgroundColor: Colors.grey[200],
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.grey[200]!),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.grey[200]!,
+                              ),
                             ),
                           ),
                           // Progress circle
@@ -213,10 +246,15 @@ class _BalanceScreenState extends State<BalanceScreen>
                                 width: 200,
                                 height: 200,
                                 child: CircularProgressIndicator(
-                                  value: (allocationPercentage / 100) * _progressAnimation.value,
+                                  value:
+                                      (allocationPercentage / 100) *
+                                      _progressAnimation.value,
                                   strokeWidth: 12,
                                   backgroundColor: Colors.transparent,
-                                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                        Color(0xFF4CAF50),
+                                      ),
                                 ),
                               );
                             },
@@ -313,7 +351,9 @@ class _BalanceScreenState extends State<BalanceScreen>
                               icon: Icons.payment,
                               color: const Color(0xFFFF9800),
                               label: 'Installments',
-                              amount: currencyProvider.formatAmount(totalInstallments),
+                              amount: currencyProvider.formatAmount(
+                                totalInstallments,
+                              ),
                             ),
                           ],
                         ],
@@ -346,19 +386,24 @@ class _BalanceScreenState extends State<BalanceScreen>
                             onTap: () => Navigator.of(context).pop(),
                           ),
                           _buildNavItem(
-                            icon: Icons.chat_bubble_outline,
-                            label: 'SaveIt Chat',
-                            isActive: false,
+                            icon: Icons.add_circle_outline,
+                            label: 'Add Installment',
+                            isActive: true,
                             onTap: () {
-                              // Navigate to chat
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const AddInstallmentScreen(),
+                                ),
+                              );
                             },
                           ),
                           _buildNavItem(
-                            icon: Icons.person_outline,
-                            label: 'Profile',
-                            isActive: true,
+                            icon: Icons.account_balance_wallet,
+                            label: 'Balance',
+                            isActive: false,
                             onTap: () {
-                              // Navigate to profile
+                              // Already on balance screen
                             },
                           ),
                         ],
@@ -385,10 +430,7 @@ class _BalanceScreenState extends State<BalanceScreen>
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 12),
         Icon(icon, color: color, size: 20),
@@ -396,10 +438,7 @@ class _BalanceScreenState extends State<BalanceScreen>
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-            ),
+            style: const TextStyle(fontSize: 16, color: Colors.black87),
           ),
         ),
         Text(
@@ -444,4 +483,3 @@ class _BalanceScreenState extends State<BalanceScreen>
     );
   }
 }
-
