@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:final_project/views/login_page.dart';
+import 'SaveIt_chat_screen/SaveIt_chat_screen.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized(); 
@@ -21,7 +22,8 @@ class MainApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
       ),
       debugShowCheckedModeBanner: false,
-      home: LoginPage(), // تبدأ بصفحة تسجيل الدخول
+      //home: LoginPage(), // تبدأ بصفحة تسجيل الدخول
+      home: SaveItChatScreen(),
     );
   }
 }
