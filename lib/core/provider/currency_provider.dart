@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/auth_service.dart';
+import 'auth_service.dart';
 
 class CurrencyProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
