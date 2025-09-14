@@ -21,10 +21,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final TextEditingController _notesController = TextEditingController();
 
   DateTime selectedDate = DateTime.now();
-  int selectedCategoryIndex = 2; // Shopping selected by default
-
-  // ✅ مصفوفة محلية عشان نخزن المصروفات
-  final List<Map<String, dynamic>> _localExpenses = [];
+  int selectedCategoryIndex = 2; 
+    final List<Map<String, dynamic>> _localExpenses = [];
 
   Future<void> _pickDate() async {
     final DateTime? picked = await showDatePicker(
@@ -89,15 +87,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       category: dummyCategories[selectedCategoryIndex].label,
       amount: double.tryParse(_amountController.text) ?? 0.0,
       date: "${selectedDate.month}/${selectedDate.day}/${selectedDate.year}",
-      color: Colors.red, // تقدرِ تخليها حسب الكاتيجوري
+      color: Colors.red, 
     );
 
     setState(() {
-      dummyExpenses.insert(0, expense); // نضيفه في الليست الأساسية
+      dummyExpenses.insert(0, expense); 
     });
 
     if (mounted) {
-      Navigator.pop(context); // نرجع للشاشة الأساسية
+      Navigator.pop(context); 
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Expense Added ✅")));

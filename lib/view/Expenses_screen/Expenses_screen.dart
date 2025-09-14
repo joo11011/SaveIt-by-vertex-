@@ -102,7 +102,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   builder: (context) => const AddExpenseScreen(),
                 ),
               );
-              setState(() {}); // ✅ عشان يعيد بناء الشاشة بعد الرجوع
+              setState(() {});
             },
             icon: const Icon(Icons.add, color: Colors.white),
             label: const Text(
