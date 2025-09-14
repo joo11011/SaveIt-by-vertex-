@@ -82,6 +82,8 @@ class AuthService {
       final user = userCredential.user;
 
       if (user != null) {
+        String finalName =
+            user.displayName ?? "User${user.uid.substring(0, 5)}";
         await _createUserDocument(user, user.displayName ?? "No Name");
       }
       return user;
@@ -128,13 +130,13 @@ class AuthService {
   }
 
   // ✅ Sign in Anonymously
-  Future<User?> signInAnonymously() async {
+  Future<User?> signInAnonymously({String username = "Anonymous"}) async {
     try {
       final userCredential = await _auth.signInAnonymously();
       final user = userCredential.user;
 
       if (user != null) {
-        await _createUserDocument(user, "Anonymous");
+        await _createUserDocument(user, username); // 👈 ياخد اللي المستخدم حطه
       }
       return user;
     } catch (e) {

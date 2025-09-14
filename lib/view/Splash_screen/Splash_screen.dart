@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:savelt_app/view/Home_screen/Home_screen.dart';
+import 'package:savelt_app/view/Log_in_screen/Log_in_screen.dart';
 import '../Forget_password_screen/forgot_password_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -94,7 +95,7 @@ class _SplashScreenState extends State<SplashScreen>
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            const HomeScreen(),
+             LoginPage(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },

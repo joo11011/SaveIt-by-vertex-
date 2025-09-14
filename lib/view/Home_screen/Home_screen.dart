@@ -1,14 +1,17 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:savelt_app/controller/settings_controller.dart';
 import 'package:savelt_app/view/Home_screen/widgets/dashboard_content.dart';
+import 'package:savelt_app/view/Profile_screen/Profile_screen.dart';
+import 'package:savelt_app/view/SaveIt_chat_screen/SaveIt_chat_screen.dart';
 import 'package:savelt_app/view/Settings_screen/Settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _HomeScreenState createState() => _HomeScreenState();
 }
 
@@ -17,11 +20,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _screens = [
     const DashboardContent(),
-    // defult screen for caht and profile we can change it
-    const Center(
-      child: Text('SaveIt Chat Screen', style: TextStyle(fontSize: 24)),
-    ),
-    const Center(child: Text('Profile Screen', style: TextStyle(fontSize: 24))),
+    SaveItChatScreen(),
+    ProfilePage(),
   ];
 
   void _onItemTapped(int index) {
@@ -32,17 +32,38 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'Hello, UserName',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+        title: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection("users")
+              .doc(user!.uid)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text("Hello...");
+            }
+
+            if (!snapshot.hasData || !snapshot.data!.exists) {
+              return const Text("Hello, User");
+            }
+
+            final userData = snapshot.data!.data() as Map<String, dynamic>;
+            final username = userData['username'] ?? "User";
+
+            return Text(
+              "Hello, $username",
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            );
+          },
         ),
         actions: [
           Padding(

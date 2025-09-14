@@ -7,7 +7,8 @@ class BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final firestoreService = Provider.of<FirestoreService>(context, listen: false);
+    final firestoreService =
+        Provider.of<FirestoreService>(context, listen: false);
 
     return StreamBuilder<Map<String, dynamic>>(
       stream: firestoreService.getUserFinancialsStream(),
@@ -30,7 +31,9 @@ class BalanceCard extends StatelessWidget {
         final savings = (userData['savings'] ?? 0).toDouble();
 
         return Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           elevation: 3,
           child: Padding(
             padding: const EdgeInsets.all(20),

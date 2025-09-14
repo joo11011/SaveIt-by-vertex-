@@ -1,3 +1,5 @@
+import 'package:savelt_app/view/Forget_password_screen/forgot_password_screen.dart';
+
 import '../../controller/login_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -82,6 +84,19 @@ class LoginPage extends StatelessWidget {
                       }
                       return null;
                     },
+                  ),
+                ),
+              const SizedBox(height: 5),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: (){
+                      Get.to(() => ForgotPasswordScreen());
+                    },
+                    child: Text(
+                      'Forgot Password?',
+                      style: TextStyle(color: Colors.green[800]),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 30),

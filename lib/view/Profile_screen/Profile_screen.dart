@@ -211,33 +211,6 @@ class _ProfilePageState extends State<ProfilePage> {
           );
         },
       ),
-
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.grey,
-        currentIndex: 1,
-        onTap: (index) {
-          if (index == 0) {
-            Get.off(() => const HomeScreen());
-          } else if (index == 2) {
-            Get.off(() => const SettingsPage());
-          }
-        },
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home),
-            label: "home".tr,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person),
-            label: "profile".tr,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.settings),
-            label: "settings".tr,
-          ),
-        ],
-      ),
     );
   }
 }
