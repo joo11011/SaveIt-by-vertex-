@@ -6,9 +6,10 @@ class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  /// Get current user id
   String? get _userId => _auth.currentUser?.uid;
 
-  // Add installment
+  /// Add installment
   Future<bool> addInstallment(InstallmentModel installment) async {
     try {
       if (_userId == null) return false;
@@ -19,9 +20,7 @@ class FirestoreService {
           .collection('installments')
           .add(installment.toMap());
 
-      // Update user's total installments amount
       await _updateUserFinancials();
-      
       return true;
     } catch (e) {
       print('Add installment error: $e');
@@ -29,7 +28,7 @@ class FirestoreService {
     }
   }
 
-  // Get installments stream
+  /// Get installments stream (real-time updates)
   Stream<List<InstallmentModel>> getInstallmentsStream() {
     if (_userId == null) return Stream.value([]);
 
@@ -40,11 +39,11 @@ class FirestoreService {
         .orderBy('dueDate', descending: false)
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => InstallmentModel.fromMap(doc.data(), doc.id))
-            .toList());
+        .map((doc) => InstallmentModel.fromMap(doc.data(), doc.id))
+        .toList());
   }
 
-  // Get user financial data stream
+  /// Get user financial data stream (real-time updates)
   Stream<Map<String, dynamic>> getUserFinancialsStream() {
     if (_userId == null) return Stream.value({});
 
@@ -53,14 +52,14 @@ class FirestoreService {
         .doc(_userId)
         .snapshots()
         .map((snapshot) {
-      if (snapshot.exists) {
+      if (snapshot.exists && snapshot.data() != null) {
         return snapshot.data() as Map<String, dynamic>;
       }
       return {};
     });
   }
 
-  // Update user financial data
+  /// Update user financial data (balance + totalInstallments)
   Future<void> _updateUserFinancials() async {
     if (_userId == null) return;
 
@@ -76,22 +75,23 @@ class FirestoreService {
       for (var doc in installmentsSnapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
         final rawAmount = data['totalAmount'] ?? 0;
-        final amount = (rawAmount is int) ? rawAmount.toDouble() : rawAmount as double;
+        final amount =
+        (rawAmount is int) ? rawAmount.toDouble() : rawAmount as double;
         totalInstallments += amount;
-
       }
 
-
       // Get current user data
-      DocumentSnapshot userDoc = await _firestore
-          .collection('users')
-          .doc(_userId)
-          .get();
+      DocumentSnapshot userDoc =
+      await _firestore.collection('users').doc(_userId).get();
 
-      Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-      double income = userData['income'] ?? 0.0;
-      double expenses = userData['expenses'] ?? 0.0;
-      double savings = userData['savings'] ?? 0.0;
+      if (!userDoc.exists || userDoc.data() == null) return;
+
+      Map<String, dynamic> userData =
+          userDoc.data() as Map<String, dynamic>? ?? {};
+      double income =
+      (userData['income'] ?? 0).toDouble(); // Ensure double values
+      double expenses = (userData['expenses'] ?? 0).toDouble();
+      double savings = (userData['savings'] ?? 0).toDouble();
 
       // Calculate new balance
       double balance = income - expenses - totalInstallments + savings;
@@ -106,49 +106,58 @@ class FirestoreService {
     }
   }
 
-  // Update user income
+  /// Update user income
   Future<void> updateUserIncome(double income) async {
     if (_userId == null) return;
 
     try {
-      await _firestore.collection('users').doc(_userId).update({
-        'income': income,
-      });
+      await _firestore.collection('users').doc(_userId).set(
+        {
+          'income': income,
+        },
+        SetOptions(merge: true),
+      );
       await _updateUserFinancials();
     } catch (e) {
       print('Update income error: $e');
     }
   }
 
-  // Update user expenses
+  /// Update user expenses
   Future<void> updateUserExpenses(double expenses) async {
     if (_userId == null) return;
 
     try {
-      await _firestore.collection('users').doc(_userId).update({
-        'expenses': expenses,
-      });
+      await _firestore.collection('users').doc(_userId).set(
+        {
+          'expenses': expenses,
+        },
+        SetOptions(merge: true),
+      );
       await _updateUserFinancials();
     } catch (e) {
       print('Update expenses error: $e');
     }
   }
 
-  // Update user savings
+  /// Update user savings
   Future<void> updateUserSavings(double savings) async {
     if (_userId == null) return;
 
     try {
-      await _firestore.collection('users').doc(_userId).update({
-        'savings': savings,
-      });
+      await _firestore.collection('users').doc(_userId).set(
+        {
+          'savings': savings,
+        },
+        SetOptions(merge: true),
+      );
       await _updateUserFinancials();
     } catch (e) {
       print('Update savings error: $e');
     }
   }
 
-  // Delete installment
+  /// Delete installment
   Future<bool> deleteInstallment(String installmentId) async {
     try {
       if (_userId == null) return false;
@@ -168,7 +177,7 @@ class FirestoreService {
     }
   }
 
-  // Mark installment as paid
+  /// Mark installment as paid
   Future<bool> markInstallmentAsPaid(String installmentId) async {
     try {
       if (_userId == null) return false;
@@ -178,7 +187,10 @@ class FirestoreService {
           .doc(_userId)
           .collection('installments')
           .doc(installmentId)
-          .update({'isPaid': true, 'paidDate': FieldValue.serverTimestamp()});
+          .update({
+        'isPaid': true,
+        'paidDate': FieldValue.serverTimestamp(),
+      });
 
       await _updateUserFinancials();
       return true;
