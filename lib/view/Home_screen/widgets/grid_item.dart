@@ -48,7 +48,7 @@ class GridItem extends StatelessWidget {
               ),
               Text(
                 amount,
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
             ],
           ),

@@ -42,11 +42,11 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 final expense = dummyExpenses[index];
 
                 return Dismissible(
-                  key: ValueKey(expense.title + index.toString()),
+                  key: UniqueKey(),
                   direction: DismissDirection.endToStart,
                   onDismissed: (direction) {
                     setState(() {
-                      dummyExpenses.removeAt(index);
+                      dummyExpenses.remove(expense);
                     });
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
