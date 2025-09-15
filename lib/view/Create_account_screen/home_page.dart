@@ -1,7 +1,7 @@
-import 'package:final_project/services/auth_service.dart';
+import 'package:savelt_app/view/Log_in_screen/Log_in_screen.dart';
+import '../../services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'login_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -19,7 +19,7 @@ class HomePage extends StatelessWidget {
       body: Center(
         child: ElevatedButton(
           onPressed: () async {
-            await authService.signOut();
+            await authService.signOut(context);
             Get.offAll(() => LoginPage());
           },
           style: ElevatedButton.styleFrom(

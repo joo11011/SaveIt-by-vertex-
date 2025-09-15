@@ -200,7 +200,7 @@ class RegisterPage extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {
                     if (controller.formKey.currentState!.validate()) {
-                      controller.register();
+                      controller.register(context);
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -242,7 +242,7 @@ class RegisterPage extends StatelessWidget {
                         color: Colors.red,
                         size: 40,
                       ),
-                      onPressed: controller.registerWithGoogle,
+                      onPressed: () => controller.registerWithGoogle(context),
                     ),
                     const SizedBox(width: 20),
                     IconButton(
@@ -251,7 +251,7 @@ class RegisterPage extends StatelessWidget {
                         color: Colors.grey,
                         size: 35,
                       ),
-                      onPressed: controller.registerAnonymously,
+                      onPressed: () => controller.registerAnonymously(context),
                       tooltip: "Guest",
                     ),
                   ],

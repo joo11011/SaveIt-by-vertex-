@@ -204,7 +204,6 @@
 
 
 import 'package:savelt_app/view/Forget_password_screen/forgot_password_screen.dart';
-
 import '../../controller/login_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -292,7 +291,7 @@ class LoginPage extends StatelessWidget {
                   ),
                 ),
 
-                //زرار "Forgot Password?" الجديد
+                //زرار "Forgot Password?" 
                 const SizedBox(height: 5),
                 Align(
                   alignment: Alignment.centerRight,
@@ -315,7 +314,7 @@ class LoginPage extends StatelessWidget {
 
                 // Login Button
                 ElevatedButton(
-                  onPressed: controller.login,
+                  onPressed: () => controller.login(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     padding: const EdgeInsets.symmetric(
@@ -358,7 +357,7 @@ class LoginPage extends StatelessWidget {
                         color: Colors.red,
                         size: 40,
                       ),
-                      onPressed: controller.loginWithGoogle,
+                      onPressed: () => controller.loginWithGoogle(context), //من غير context مش هقدر اوصل لل provider
                     ),
                     const SizedBox(width: 20),
                     IconButton(
@@ -367,7 +366,7 @@ class LoginPage extends StatelessWidget {
                         color: Colors.grey,
                         size: 35,
                       ),
-                      onPressed: controller.loginAnonymously,
+                      onPressed: () => controller.loginAnonymously(context),
                       tooltip: "Guest",
                     ),
                   ],

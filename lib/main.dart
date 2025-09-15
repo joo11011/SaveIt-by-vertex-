@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:savelt_app/core/provider/user_provider.dart';
 import 'package:savelt_app/firebase_options.dart';
 import 'package:savelt_app/view/Home_screen/Home_screen.dart';
 import 'package:savelt_app/view/Log_in_screen/Log_in_screen.dart';
@@ -22,6 +23,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        //عشان المستخدم لو سجل خروجه و رجع دخل يلاقي كل اللي كاتبه في التطبيق كله
+        ChangeNotifierProvider<UserProvider>(
+          create: (_) => UserProvider()..loadUserData(),
+        ),
+        
         Provider<FirestoreService>(create: (_) => FirestoreService()),
         ChangeNotifierProvider<CurrencyProvider>(
           create: (_) => CurrencyProvider(),

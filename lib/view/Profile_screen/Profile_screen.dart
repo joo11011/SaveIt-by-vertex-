@@ -443,7 +443,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   titleKey: "sign_out",
                   iconColor: Colors.red,
                   onTap: () async {
-                    await _authService.signOut();
+                    await _authService.signOut(context);
                     Get.offAll(() => LoginPage()); // يرجع لصفحة تسجيل الدخول
                   },
                 ),
