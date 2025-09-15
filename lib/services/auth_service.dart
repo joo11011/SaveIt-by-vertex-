@@ -1,157 +1,222 @@
-// import 'dart:math';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:final_project/models/user_model.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:flutter/material.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
-// import 'package:get/get.dart';
 // import 'package:google_sign_in/google_sign_in.dart';
+// import 'package:get/get.dart';
+// import 'package:flutter/material.dart';
 
 // class AuthService {
 //   final FirebaseAuth _auth = FirebaseAuth.instance;
 //   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+//   // Get current user
 //   User? get currentUser => _auth.currentUser;
 
-//   // تسجيل مستخدم جديد وتخزين بياناته في Firestore
-//   Future<User?> registerWithEmail({
-//     required String email,
-//     required String password,
-//     required String username,
-//   }) async {
+//   // Auth state changes stream
+//   Stream<User?> get authStateChanges => _auth.authStateChanges();
+
+//   // ✅ Register with email & password + save user document
+//   Future<UserCredential?> registerWithEmailAndPassword(
+//     String email,
+//     String password,
+//     String username,
+//   ) async {
 //     try {
-//       final userCredential = await _auth.createUserWithEmailAndPassword(
+//       UserCredential result = await _auth.createUserWithEmailAndPassword(
 //         email: email,
 //         password: password,
 //       );
 
-//       final user = userCredential.user;
-
-//       if (user != null) {
-//         final newUser = UserModel(
-//           uid: user.uid,
-//           email: email,
-//           username: username,
-//         );
-
-//         await _firestore.collection("users").doc(user.uid).set(newUser.toMap());
-//       }
-
-//       return user;
+//       await _createUserDocument(result.user!, username);
+//       return result;
 //     } catch (e) {
-//       //print("Error in Register: $e");
-//       Get.snackbar("Login Failed", e.toString(),
-//       snackPosition: SnackPosition.BOTTOM,
-//       backgroundColor: Colors.red);
-
+//       Get.snackbar(
+//         "Register Failed",
+//         e.toString(),
+//         snackPosition: SnackPosition.BOTTOM,
+//         backgroundColor: Colors.red,
+//       );
 //       return null;
 //     }
 //   }
 
-//   // تسجيل الدخول
-//   Future<User?> signInWithEmail({
-//     required String email,
-//     required String password,
-//   }) async {
+//   // ✅ Sign in with email & password
+//   Future<UserCredential?> signInWithEmailAndPassword(
+//     String email,
+//     String password,
+//   ) async {
 //     try {
-//       final userCredential = await _auth.signInWithEmailAndPassword(
+//       UserCredential result = await _auth.signInWithEmailAndPassword(
 //         email: email,
 //         password: password,
 //       );
-//       return userCredential.user;
-//     } catch (e) { //error handling
-//       //print("Error in SignIn: $e");
-//       Get.snackbar("Login Failed", e.toString(),
-//       snackPosition: SnackPosition.BOTTOM,
-//       backgroundColor: Colors.red);
-
+//       return result;
+//     } catch (e) {
+//       Get.snackbar(
+//         "Login Failed",
+//         e.toString(),
+//         snackPosition: SnackPosition.BOTTOM,
+//         backgroundColor: Colors.red,
+//       );
 //       return null;
 //     }
 //   }
 
-//   // Google Sign In
+//   // ✅ Sign in with Google
 //   Future<User?> signInWithGoogle() async {
-//   try {
-//     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-//     if (googleUser == null) return null;
+//     try {
+//       final GoogleSignIn googleSignIn = GoogleSignIn(
+//         scopes: ['email', 'https://www.googleapis.com/auth/userinfo.profile'],
+//       );
 
-//     final googleAuth = await googleUser.authentication;
-//     final credential = GoogleAuthProvider.credential(
-//       accessToken: googleAuth.accessToken,
-//       idToken: googleAuth.idToken,
-//     );
+//       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+//       if (googleUser == null) return null;
 
-//     final userCredential = await _auth.signInWithCredential(credential);
-//     final user = userCredential.user;
-
-//     if (user != null) {
-//       // هنا نسجل أو نحدث بيانات Firestore
-//       await _firestore.collection("users").doc(user.uid).set({
-//         "uid": user.uid,
-//         "email": user.email,
-//         "username": user.displayName ?? "No Name",
-//       }, SetOptions(merge: true)); // يخلي التحديث مش overwrite
-//     }
-
-//     return user;
-//   } catch (e) {
-//     //print("Error in Google SignIn: $e");
-//     Get.snackbar("Login Failed", e.toString(),
-//     snackPosition: SnackPosition.BOTTOM,
-//     backgroundColor: Colors.red);
-
-//     return null;
-//   }
-// }
-
-//   // Facebook Sign In
-//   Future<User?> signInWithFacebook() async {
-//   try {
-//     final LoginResult result = await FacebookAuth.instance.login();
-
-//     if (result.status == LoginStatus.success) {
-//       final OAuthCredential credential =
-//           FacebookAuthProvider.credential(result.accessToken!.tokenString);
+//       final googleAuth = await googleUser.authentication;
+//       final credential = GoogleAuthProvider.credential(
+//         accessToken: googleAuth.accessToken,
+//         idToken: googleAuth.idToken,
+//       );
 
 //       final userCredential = await _auth.signInWithCredential(credential);
 //       final user = userCredential.user;
 
 //       if (user != null) {
-//         // هنا نسجل أو نحدث بيانات Firestore
-//         await _firestore.collection("users").doc(user.uid).set({
-//           "uid": user.uid,
-//           "email": user.email,
-//           "username": user.displayName ?? "No Name",
-//         }, SetOptions(merge: true)); // update أو add حسب الحالة
+//         String finalName =
+//             user.displayName ?? "User${user.uid.substring(0, 5)}";
+//         await _createUserDocument(user, user.displayName ?? "No Name");
 //       }
-
 //       return user;
-//     } else {
-//       //print("Facebook login failed: ${result.message}");
-
-//       Get.snackbar("Login Failed", e.toString(),
-//       snackPosition: SnackPosition.BOTTOM,
-//       backgroundColor: Colors.red
+//     } catch (e) {
+//       Get.snackbar(
+//         "Google Sign-In Failed",
+//         e.toString(),
+//         snackPosition: SnackPosition.BOTTOM,
+//         backgroundColor: Colors.red,
 //       );
-
 //       return null;
 //     }
-//   } catch (e) {
-//     //print("Error in Facebook SignIn: $e");
-
-//     Get.snackbar("Login Failed", e.toString(),
-//     snackPosition: SnackPosition.BOTTOM,
-//     backgroundColor: Colors.red);
-
-//     return null;
 //   }
-// }
 
-//   // تسجيل الخروج
+//   // ✅ Sign in with Facebook
+//   Future<User?> signInWithFacebook() async {
+//     try {
+//       final result = await FacebookAuth.instance.login();
+//       if (result.status == LoginStatus.success) {
+//         final facebookAuthCredential = FacebookAuthProvider.credential(
+//           result.accessToken!.tokenString,
+//         );
+
+//         final userCredential = await _auth.signInWithCredential(
+//           facebookAuthCredential,
+//         );
+//         final user = userCredential.user;
+
+//         if (user != null) {
+//           await _createUserDocument(user, user.displayName ?? "No Name");
+//         }
+//         return user;
+//       }
+//       return null;
+//     } catch (e) {
+//       Get.snackbar(
+//         "Facebook Sign-In Failed",
+//         e.toString(),
+//         snackPosition: SnackPosition.BOTTOM,
+//         backgroundColor: Colors.red,
+//       );
+//       return null;
+//     }
+//   }
+
+//   // ✅ Sign in Anonymously
+//   Future<User?> signInAnonymously({String username = "Anonymous"}) async {
+//     try {
+//       final userCredential = await _auth.signInAnonymously();
+//       final user = userCredential.user;
+
+//       if (user != null) {
+//         await _createUserDocument(user, username); // 👈 ياخد اللي المستخدم حطه
+//       }
+//       return user;
+//     } catch (e) {
+//       Get.snackbar(
+//         "Anonymous Sign-In Failed",
+//         e.toString(),
+//         snackPosition: SnackPosition.BOTTOM,
+//         backgroundColor: Colors.red,
+//       );
+//       return null;
+//     }
+//   }
+
+//   // ✅ Sign out (Email / Google / Facebook)
 //   Future<void> signOut() async {
-//     await _auth.signOut();
-//     await GoogleSignIn().signOut();
-//     await FacebookAuth.instance.logOut();
+//     try {
+//       await _auth.signOut();
+//       await GoogleSignIn().signOut();
+//       await FacebookAuth.instance.logOut();
+//     } catch (e) {
+//       print('Sign out error: $e');
+//     }
+//   }
+
+//   // ✅ Reset password
+//   Future<bool> resetPassword(String email) async {
+//     try {
+//       await _auth.sendPasswordResetEmail(email: email);
+//       return true;
+//     } catch (e) {
+//       Get.snackbar(
+//         "Reset Password Failed",
+//         e.toString(),
+//         snackPosition: SnackPosition.BOTTOM,
+//         backgroundColor: Colors.red,
+//       );
+//       return false;
+//     }
+//   }
+
+//   // ✅ Get user data from Firestore
+//   Future<DocumentSnapshot?> getUserData() async {
+//     try {
+//       if (currentUser != null) {
+//         return await _firestore.collection('users').doc(currentUser!.uid).get();
+//       }
+//       return null;
+//     } catch (e) {
+//       print('Get user data error: $e');
+//       return null;
+//     }
+//   }
+
+//   // ✅ Update user currency
+//   Future<void> updateUserCurrency(String currency) async {
+//     try {
+//       if (currentUser != null) {
+//         await _firestore.collection('users').doc(currentUser!.uid).update({
+//           'currency': currency,
+//         });
+//       }
+//     } catch (e) {
+//       print('Update currency error: $e');
+//     }
+//   }
+
+//   // 📌 Create user document in Firestore (shared function)
+//   Future<void> _createUserDocument(User user, String username) async {
+//     await _firestore.collection('users').doc(user.uid).set({
+//       'uid': user.uid,
+//       'email': user.email ?? "Anonymous",
+//       'username': username,
+//       'createdAt': FieldValue.serverTimestamp(),
+//       'currency': 'SAR', // Default currency
+//       'balance': 0.0,
+//       'income': 0.0,
+//       'expenses': 0.0,
+//       'savings': 0.0,
+//       'totalInstallments': 0.0,
+//     }, SetOptions(merge: true));
 //   }
 // }
 
@@ -163,78 +228,79 @@
 
 
 
-
-
-
-
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:final_project/models/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
-import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; //  إضافة جديدة
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Get current user
   User? get currentUser => _auth.currentUser;
 
-  // تسجيل مستخدم جديد
-  Future<User?> registerWithEmail({
-    required String email,
-    required String password,
-    required String username,
-  }) async {
+  // Auth state changes stream
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
+
+  //  Register with email & password + save user document
+  Future<UserCredential?> registerWithEmailAndPassword(
+    String email,
+    String password,
+    String username,
+  ) async {
     try {
-      final userCredential = await _auth.createUserWithEmailAndPassword(
+      UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      final user = userCredential.user;
-      if (user != null) {
-        final newUser =
-            UserModel(uid: user.uid, email: email, username: username);
-
-        await _firestore.collection("users").doc(user.uid).set(newUser.toMap());
-      }
-      return user;
+      await _createUserDocument(result.user!, username);
+      return result;
     } catch (e) {
-      //print("Error in Register: $e");
-      
+      Get.snackbar(
+        "Register Failed",
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+      );
       return null;
     }
   }
 
-  // تسجيل الدخول بالبريد
-  Future<User?> signInWithEmail({
-    required String email,
-    required String password,
-  }) async {
+  //  Sign in with email & password
+  Future<UserCredential?> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
     try {
-      final userCredential = await _auth.signInWithEmailAndPassword(
+      UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      return userCredential.user;
+      return result;
     } catch (e) {
-      //print("Error in SignIn: $e");
-
-      //error handling
-      Get.snackbar("Login Failed", e.toString(),
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red);
+      Get.snackbar(
+        "Login Failed",
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+      );
       return null;
     }
   }
 
-  // تسجيل الدخول بجوجل
+  //  Sign in with Google
   Future<User?> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'https://www.googleapis.com/auth/userinfo.profile'],
+      );
+
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) return null;
 
       final googleAuth = await googleUser.authentication;
@@ -247,86 +313,148 @@ class AuthService {
       final user = userCredential.user;
 
       if (user != null) {
-        await _firestore.collection("users").doc(user.uid).set({
-          "uid": user.uid,
-          "email": user.email,
-          "username": user.displayName ?? "No Name",
-        }, SetOptions(merge: true));
+        String finalName =
+            user.displayName ?? "User${user.uid.substring(0, 5)}";
+        await _createUserDocument(user, user.displayName ?? "No Name");
       }
       return user;
     } catch (e) {
-      //print("Error in Google SignIn: $e");
-
-      //error handling
-      Get.snackbar("Login Failed", e.toString(),
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red);
+      Get.snackbar(
+        "Google Sign-In Failed",
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+      );
       return null;
     }
   }
 
-  // تسجيل الدخول بالفيسبوك
+  //  Sign in with Facebook
   Future<User?> signInWithFacebook() async {
     try {
       final result = await FacebookAuth.instance.login();
       if (result.status == LoginStatus.success) {
-        final facebookAuthCredential =
-            FacebookAuthProvider.credential(result.accessToken!.tokenString);
+        final facebookAuthCredential = FacebookAuthProvider.credential(
+          result.accessToken!.tokenString,
+        );
 
-        final userCredential =
-            await _auth.signInWithCredential(facebookAuthCredential);
+        final userCredential = await _auth.signInWithCredential(
+          facebookAuthCredential,
+        );
         final user = userCredential.user;
 
         if (user != null) {
-          await _firestore.collection("users").doc(user.uid).set({
-            "uid": user.uid,
-            "email": user.email,
-            "username": user.displayName ?? "No Name",
-          }, SetOptions(merge: true));
+          await _createUserDocument(user, user.displayName ?? "No Name");
         }
         return user;
       }
       return null;
     } catch (e) {
-      //print("Error in Facebook SignIn: $e");
-
-      //error handling
-      Get.snackbar("Login Failed", e.toString(),
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red);
-
+      Get.snackbar(
+        "Facebook Sign-In Failed",
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+      );
       return null;
     }
   }
 
-  //تسجيل الدخول كمجهول الهويه
-  Future<User?> signInAnonymously() async {
+  //  Sign in Anonymously
+  Future<User?> signInAnonymously({String username = "Anonymous"}) async {
     try {
       final userCredential = await _auth.signInAnonymously();
       final user = userCredential.user;
 
       if (user != null) {
-        // نخزن بيانات أساسية في Firestore
-        await _firestore.collection("users").doc(user.uid).set({
-          "uid": user.uid,
-          "email": user.email ?? "Anonymous",
-          "username": "Anonymous",
-        }, SetOptions(merge: true));
+        await _createUserDocument(user, username); // 👈 ياخد اللي المستخدم حطه
       }
       return user;
     } catch (e) {
-      Get.snackbar("Login Failed", e.toString(),
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red);
+      Get.snackbar(
+        "Anonymous Sign-In Failed",
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+      );
       return null;
     }
   }
 
-
-  // تسجيل الخروج
+  //  Sign out (Email / Google / Facebook)
   Future<void> signOut() async {
-    await _auth.signOut();
-    await GoogleSignIn().signOut();
-    await FacebookAuth.instance.logOut();
+    try {
+      final user = _auth.currentUser;
+
+      //  لو مجهول امسح الشات بتاعه
+      if (user != null && user.isAnonymous) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove("chat_history_${user.uid}");
+      }
+
+      await _auth.signOut();
+      await GoogleSignIn().signOut();
+      await FacebookAuth.instance.logOut();
+    } catch (e) {
+      print('Sign out error: $e');
+    }
+  }
+
+  //  Reset password
+  Future<bool> resetPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      return true;
+    } catch (e) {
+      Get.snackbar(
+        "Reset Password Failed",
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+      );
+      return false;
+    }
+  }
+
+  //  Get user data from Firestore
+  Future<DocumentSnapshot?> getUserData() async {
+    try {
+      if (currentUser != null) {
+        return await _firestore.collection('users').doc(currentUser!.uid).get();
+      }
+      return null;
+    } catch (e) {
+      print('Get user data error: $e');
+      return null;
+    }
+  }
+
+  //  Update user currency
+  Future<void> updateUserCurrency(String currency) async {
+    try {
+      if (currentUser != null) {
+        await _firestore.collection('users').doc(currentUser!.uid).update({
+          'currency': currency,
+        });
+      }
+    } catch (e) {
+      print('Update currency error: $e');
+    }
+  }
+
+  //  Create user document in Firestore (shared function)
+  Future<void> _createUserDocument(User user, String username) async {
+    await _firestore.collection('users').doc(user.uid).set({
+      'uid': user.uid,
+      'email': user.email ?? "Anonymous",
+      'username': username,
+      'createdAt': FieldValue.serverTimestamp(),
+      'currency': 'SAR', // Default currency
+      'balance': 0.0,
+      'income': 0.0,
+      'expenses': 0.0,
+      'savings': 0.0,
+      'totalInstallments': 0.0,
+    }, SetOptions(merge: true));
   }
 }
