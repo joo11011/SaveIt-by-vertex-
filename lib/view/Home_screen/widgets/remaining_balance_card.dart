@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:savelt_app/view/Balance_screen/Balance_screen.dart';
 
 class RemainingBalanceCard extends StatelessWidget {
@@ -60,8 +61,8 @@ class RemainingBalanceCard extends StatelessWidget {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'Remaining Balance',
+                Text(
+                  'remaining_balance'.tr,
                   style: TextStyle(
                     color: Colors.grey,
                     fontSize: 14,
@@ -92,13 +93,13 @@ class RemainingBalanceCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _buildInfoColumn(
-                      'Income',
+                      'income'.tr,
                       "$incomeVal $currency",
                       Colors.green.shade600,
                     ),
                     const SizedBox(width: 20),
                     _buildInfoColumn(
-                      'Expenses',
+                      'expense'.tr,
                       "$expensesVal $currency",
                       Colors.red.shade400,
                     ),

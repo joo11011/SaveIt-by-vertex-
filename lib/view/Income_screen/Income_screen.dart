@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:savelt_app/view/Income_screen/widgets/add_income_button.dart';
 import 'package:savelt_app/view/Income_screen/widgets/income_list.dart';
 
@@ -25,7 +26,7 @@ class income_screen extends StatelessWidget {
           icon: Icon(Icons.arrow_back_ios_new_outlined),
         ),
         title: Text(
-          "Income",
+          'income'.tr,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
         ),
         centerTitle: true,
@@ -54,7 +55,10 @@ class income_screen extends StatelessWidget {
                         : Icons.attach_money,
                   };
                 }).toList();
-                return income_list(incomes: allincomes);
+                return income_list(
+                  incomes: allincomes,
+                  docIds: snapshot.data!.docs.map((doc) => doc.id).toList(),
+                );
               },
             ),
           ),

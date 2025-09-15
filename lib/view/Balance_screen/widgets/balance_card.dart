@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/get_utils.dart';
 import 'package:provider/provider.dart';
 import '../../../core/provider/firestore_service.dart';
 
@@ -7,8 +8,10 @@ class BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final firestoreService =
-        Provider.of<FirestoreService>(context, listen: false);
+    final firestoreService = Provider.of<FirestoreService>(
+      context,
+      listen: false,
+    );
 
     return StreamBuilder<Map<String, dynamic>>(
       stream: firestoreService.getUserFinancialsStream(),
@@ -40,8 +43,8 @@ class BalanceCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Your Balance",
+                Text(
+                  'Your Balance'.tr,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
@@ -57,9 +60,9 @@ class BalanceCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Income: SAR ${income.toStringAsFixed(2)}"),
-                    Text("Expenses: SAR ${expenses.toStringAsFixed(2)}"),
-                    Text("Savings: SAR ${savings.toStringAsFixed(2)}"),
+                    Text("${'income'.tr}: SAR ${income.toStringAsFixed(2)}"),
+                    Text("${'expense'.tr}: SAR ${expenses.toStringAsFixed(2)}"),
+                    Text("${'savings'.tr}: SAR ${savings.toStringAsFixed(2)}"),
                   ],
                 ),
               ],

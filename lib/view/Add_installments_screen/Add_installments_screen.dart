@@ -1,219 +1,94 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../core/provider/currency_provider.dart';
-import '../../core/provider/firestore_service.dart';
-import '../../model/installment_model.dart';
+import 'package:get/get.dart';
+import '../../services/firebase_service.dart';
+import '../Installments_screen/Installments_screen.dart';
 
 class AddInstallmentScreen extends StatefulWidget {
-  const AddInstallmentScreen({super.key});
+  final Installment? installmentToEdit;
+
+  const AddInstallmentScreen({super.key, this.installmentToEdit});
 
   @override
   State<AddInstallmentScreen> createState() => _AddInstallmentScreenState();
 }
 
 class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
-  final TextEditingController _installmentNameController =
-      TextEditingController();
-  final TextEditingController _totalAmountController = TextEditingController();
-  final TextEditingController _dueDateController = TextEditingController();
-  final TextEditingController _categoryController = TextEditingController();
-  final TextEditingController _notesController = TextEditingController();
-
-  final FirestoreService _firestoreService = FirestoreService();
   final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _amountController = TextEditingController();
+  final _dueDateController = TextEditingController();
+  final _categoryController = TextEditingController();
+  final _notesController = TextEditingController();
 
+  String _selectedCurrency = 'SAR';
   DateTime? _selectedDate;
   bool _isLoading = false;
 
+  final List<String> _currencies = ['SAR', 'USD', 'E.G'];
   final List<String> _categories = [
-    'Phone Bill',
-    'Internet',
-    'Electricity',
-    'Water',
-    'Gas',
-    'Insurance',
-    'Loan',
-    'Credit Card',
-    'Subscription',
+    'Bills',
+    'Shopping',
+    'Food',
+    'Transport',
+    'Entertainment',
+    'Health',
+    'Education',
     'Other',
   ];
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.installmentToEdit != null) {
+      _populateFields();
+    }
+  }
+
+  void _populateFields() {
+    final installment = widget.installmentToEdit!;
+    _titleController.text = installment.title;
+    _amountController.text = installment.amount.toString();
+    _categoryController.text = installment.category;
+    _notesController.text = installment.notes;
+
+    if (installment.dueDate.isNotEmpty) {
+      _dueDateController.text = installment.dueDate;
+    }
+  }
+
+  @override
   void dispose() {
-    _installmentNameController.dispose();
-    _totalAmountController.dispose();
+    _titleController.dispose();
+    _amountController.dispose();
     _dueDateController.dispose();
     _categoryController.dispose();
     _notesController.dispose();
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+  Future<void> _selectDate() async {
+    final date = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(), // Don't allow past dates
-      lastDate: DateTime(2101),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF4CAF50),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      initialDate: _selectedDate ?? DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
     );
 
-    if (picked != null && picked.isAfter(DateTime.now())) {
+    if (date != null) {
       setState(() {
-        _selectedDate = picked;
-        _dueDateController.text = DateFormat('MM/dd/yyyy').format(picked);
+        _selectedDate = date;
+        _dueDateController.text = DateFormat('MM/dd/yyyy').format(date);
       });
     }
   }
 
-  void _showCurrencyPicker(BuildContext context) {
-    final currencyProvider = Provider.of<CurrencyProvider>(
-      context,
-      listen: false,
-    );
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
-      ),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Select Currency',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: currencyProvider.availableCurrencies.map((
-                      currency,
-                    ) {
-                      Map<String, String> info = currencyProvider
-                          .getCurrencyInfo(currency);
-                      return ListTile(
-                        leading: Text(
-                          info['flag']!,
-                          style: const TextStyle(fontSize: 24),
-                        ),
-                        title: Text(currency),
-                        subtitle: Text(info['name']!),
-                        trailing: currencyProvider.selectedCurrency == currency
-                            ? const Icon(Icons.check, color: Color(0xFF4CAF50))
-                            : null,
-                        onTap: () {
-                          currencyProvider.setCurrency(currency);
-                          Navigator.pop(context);
-                        },
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showCategoryPicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Select Category',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: _categories.map((category) {
-                      return ListTile(
-                        title: Text(category),
-                        onTap: () {
-                          setState(() {
-                            _categoryController.text = category;
-                          });
-                          Navigator.pop(context);
-                        },
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _addInstallment() async {
+  Future<void> _saveInstallment() async {
     if (!_formKey.currentState!.validate()) return;
-
-    // Add additional validation checks
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a due date'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // Check if category is selected
-    if (_categoryController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a category'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // Check if date is not in the past
-    if (_selectedDate!.isBefore(DateTime.now())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Due date cannot be in the past'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('please_select_due_date'.tr)));
       return;
     }
 
@@ -222,51 +97,85 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
     });
 
     try {
-      final currencyProvider = Provider.of<CurrencyProvider>(
-        context,
-        listen: false,
-      );
-
-      final installment = InstallmentModel(
-        installmentName: _installmentNameController.text.trim(),
-        totalAmount: double.parse(_totalAmountController.text),
-        dueDate: _selectedDate!,
+      final installment = Installment(
+        id: widget.installmentToEdit?.id,
+        title: _titleController.text.trim(),
+        dueDate:
+            'Due on ${_selectedDate!.day}th ${_getMonthName(_selectedDate!.month)}',
+        amount: double.parse(_amountController.text),
+        status: widget.installmentToEdit?.status ?? 'upcoming',
+        icon: Icons.receipt,
+        iconColor: Colors.blue,
+        timeStatus: _calculateTimeStatus(_selectedDate!),
         category: _categoryController.text.trim(),
         notes: _notesController.text.trim(),
-        currency: currencyProvider.selectedCurrency,
-        createdAt: DateTime.now(),
       );
 
-      bool success = await _firestoreService.addInstallment(installment);
-
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Installment added successfully!'),
-            backgroundColor: Color(0xFF4CAF50),
-          ),
-        );
-        Navigator.of(context).pop();
+      if (widget.installmentToEdit != null) {
+        await FirebaseService.updateInstallment(installment);
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('installment_updated'.tr)));
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to add installment. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        await FirebaseService.addInstallment(installment);
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('installment_added'.tr)));
+        }
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  String _calculateTimeStatus(DateTime dueDate) {
+    final now = DateTime.now();
+    final difference = dueDate.difference(now).inDays;
+
+    if (difference == 0) {
+      return 'Due Today';
+    } else if (difference == 1) {
+      return 'Due Tomorrow';
+    } else if (difference < 0) {
+      return 'Overdue';
+    } else {
+      return 'In $difference days';
+    }
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return months[month - 1];
   }
 
   @override
@@ -274,330 +183,100 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Add Installment',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
+        title: Text(
+          widget.installmentToEdit != null
+              ? 'edit_installment'.tr
+              : 'add_installment'.tr,
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Installment Name
-                      const Text(
-                        'Installment Name',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: TextFormField(
-                          controller: _installmentNameController,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter installment name';
-                            }
-                            return null;
-                          },
-                          decoration: const InputDecoration(
-                            hintText: 'e.g. Phone Bill',
-                            hintStyle: TextStyle(color: Colors.grey),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Total Amount with Currency Selector
-                      const Text(
-                        'Total Amount',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Row(
-                          children: [
-                            Consumer<CurrencyProvider>(
-                              builder: (context, currencyProvider, child) {
-                                return GestureDetector(
-                                  onTap: () => _showCurrencyPicker(context),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 16,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      border: Border(
-                                        right: BorderSide(
-                                          color: Colors.grey[300]!,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          currencyProvider.currencyFlag,
-                                          style: const TextStyle(fontSize: 16),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          currencyProvider.selectedCurrency,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.black87,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        const Icon(
-                                          Icons.keyboard_arrow_down,
-                                          color: Colors.grey,
-                                          size: 20,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _totalAmountController,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Please enter amount';
-                                  }
-                                  if (double.tryParse(value) == null ||
-                                      double.parse(value) <= 0) {
-                                    return 'Please enter valid amount';
-                                  }
-                                  return null;
-                                },
-                                decoration: const InputDecoration(
-                                  hintText: '0.00',
-                                  hintStyle: TextStyle(color: Colors.grey),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Due Date
-                      const Text(
-                        'Due Date',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: TextFormField(
-                          controller: _dueDateController,
-                          readOnly: true,
-                          onTap: () => _selectDate(context),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please select due date';
-                            }
-                            return null;
-                          },
-                          decoration: const InputDecoration(
-                            hintText: 'mm/dd/yyyy',
-                            hintStyle: TextStyle(color: Colors.grey),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            suffixIcon: Icon(
-                              Icons.calendar_today,
-                              color: Colors.grey,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Category
-                      const Text(
-                        'Category',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: TextFormField(
-                          controller: _categoryController,
-                          readOnly: true,
-                          onTap: () => _showCategoryPicker(context),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please select category';
-                            }
-                            return null;
-                          },
-                          decoration: const InputDecoration(
-                            hintText: 'Select or type a category',
-                            hintStyle: TextStyle(color: Colors.grey),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            suffixIcon: Icon(
-                              Icons.keyboard_arrow_down,
-                              color: Colors.grey,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Notes
-                      const Text(
-                        'Notes (Optional)',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: TextFormField(
-                          controller: _notesController,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            hintText: 'Add any relevant notes here...',
-                            hintStyle: TextStyle(color: Colors.grey),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                    ],
-                  ),
-                ),
+              _buildInputField(
+                controller: _titleController,
+                label: 'installment_name'.tr,
+                hint: 'enter_installment_name'.tr,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'please_enter_name'.tr;
+                  }
+                  return null;
+                },
               ),
+              const SizedBox(height: 20),
 
-              // Add Installment Button
-              Container(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: Container(
-                  width: double.infinity,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF4CAF50), Color(0xFF45A049)],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
+              _buildAmountField(),
+              const SizedBox(height: 20),
+
+              _buildInputField(
+                controller: _dueDateController,
+                label: 'due_date'.tr,
+                hint: 'mm/dd/yyyy',
+                suffixIcon: Icons.calendar_today,
+                readOnly: true,
+                onTap: _selectDate,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'select_due_date'.tr;
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              _buildCategoryField(),
+              const SizedBox(height: 20),
+
+              _buildNotesField(),
+              const SizedBox(height: 40),
+
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _saveInstallment,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    elevation: 0,
                   ),
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _addInstallment,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text(
-                            'Add Installment',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
                           ),
-                  ),
+                        )
+                      : Text(
+                          widget.installmentToEdit != null
+                              ? 'update_installment'.tr
+                              : 'add_installment_btn'.tr,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -606,5 +285,245 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
       ),
     );
   }
-}
 
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    IconData? suffixIcon,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          readOnly: readOnly,
+          onTap: onTap,
+          validator: validator,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            suffixIcon: suffixIcon != null
+                ? Icon(suffixIcon, color: Colors.grey[400])
+                : null,
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.orange, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAmountField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'total_amount'.tr,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
+                  ),
+                ),
+                child: DropdownButton<String>(
+                  value: _selectedCurrency,
+                  underline: const SizedBox(),
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.grey,
+                  ),
+                  items: _currencies.map((String currency) {
+                    return DropdownMenuItem<String>(
+                      value: currency,
+                      child: Text(currency),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      setState(() {
+                        _selectedCurrency = newValue;
+                      });
+                    }
+                  },
+                ),
+              ),
+              Expanded(
+                child: TextFormField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    hintText: '0.00',
+                    hintStyle: TextStyle(color: Colors.grey),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'please_enter_amount'.tr;
+                    }
+                    if (double.tryParse(value) == null) {
+                      return 'invalid_amount'.tr;
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'category'.tr,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _categoryController,
+          decoration: InputDecoration(
+            hintText: 'select_category'.tr,
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.orange, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+            suffixIcon: PopupMenuButton<String>(
+              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+              onSelected: (String value) {
+                _categoryController.text = value;
+              },
+              itemBuilder: (BuildContext context) {
+                return _categories.map((String category) {
+                  return PopupMenuItem<String>(
+                    value: category,
+                    child: Text(category),
+                  );
+                }).toList();
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNotesField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'notes_optional'.tr,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _notesController,
+          maxLines: 4,
+          decoration: InputDecoration(
+            hintText: 'notes_optional'.tr,
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.orange, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

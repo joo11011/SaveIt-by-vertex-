@@ -9,7 +9,7 @@ class MessageStyle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMe = message.isMe;
-    final bg = isMe ? const Color(0xFF20C659) : Colors.grey[200];
+    final bg = isMe ? Colors.green : Colors.grey[200]; //-------------------
     final fg = isMe ? Colors.white : Colors.black87;
 
     final align = isMe ? CrossAxisAlignment.start : CrossAxisAlignment.end;

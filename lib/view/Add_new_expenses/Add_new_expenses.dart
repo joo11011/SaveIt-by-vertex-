@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/get_utils.dart';
 import '../../model/category_model.dart';
 import '../../model/dummy_categories.dart';
 import '../../model/dummy_expenses.dart';
 import '../../model/expenses_model.dart';
+import '../../services/expense_service.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key});
@@ -22,7 +24,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   DateTime selectedDate = DateTime.now();
   int selectedCategoryIndex = 2;
-  final List<Map<String, dynamic>> _localExpenses = [];
+  // final List<Map<String, dynamic>> _localExpenses = [];
 
   Future<void> _pickDate() async {
     final DateTime? picked = await showDatePicker(
@@ -93,6 +95,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     setState(() {
       dummyExpenses.insert(0, expense);
     });
+    ExpenseService().addExpenseToFirebase(
+      expense,
+      notes: _notesController.text,
+    );
 
     if (mounted) {
       Navigator.pop(context);
@@ -107,7 +113,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Add New Expense"),
+        title: Text('add_expense'.tr),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -122,8 +128,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Amount",
+              Text(
+                'amount'.tr,
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
@@ -141,12 +147,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
               const SizedBox(height: 20),
 
-              const Text("Expense Name"),
+              Text('expense_name'.tr),
               const SizedBox(height: 8),
               TextField(
                 controller: _nameController,
                 decoration: InputDecoration(
-                  hintText: "Enter expense name",
+                  hintText: 'enter expense name'.tr,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -154,7 +160,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
               const SizedBox(height: 20),
 
-              const Text("Category"),
+              Text('category'.tr),
               const SizedBox(height: 12),
               GridView.builder(
                 shrinkWrap: true,
@@ -171,7 +177,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   final bool isSelected = selectedCategoryIndex == index;
                   return GestureDetector(
                     onTap: () {
-                      if (category.label == "Other") {
+                      if (category.label == 'others') {
                         _showAddCategoryDialog();
                       } else {
                         setState(() {
@@ -200,7 +206,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            category.label,
+                            category.label.tr,
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
@@ -215,7 +221,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
               const SizedBox(height: 20),
 
-              const Text("Date"),
+              Text('date of expense'.tr),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: _pickDate,
@@ -241,7 +247,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
               const SizedBox(height: 20),
 
-              const Text("Notes (Optional)"),
+              Text("notes".tr + " " + "optional".tr),
               const SizedBox(height: 8),
               TextField(
                 controller: _notesController,
@@ -272,8 +278,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ),
             onPressed: _saveExpense,
             icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text(
-              "Add Expense",
+            label: Text(
+              'add the expense'.tr,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,

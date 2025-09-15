@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/get_utils.dart';
 import 'package:savelt_app/view/Add_new_expenses/Add_new_expenses.dart';
 import '../../model/dummy_expenses.dart';
 
@@ -17,24 +18,15 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        title: const Text(
-          "Expenses",
+        title: Text(
+          'expense'.tr,
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.calendar_today, color: Colors.grey),
-            ),
-          ),
-        ],
       ),
 
       body: dummyExpenses.isEmpty
-          ? const Center(child: Text("No expenses added yet"))
+          ? Center(child: Text('no expense added yet'.tr))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: dummyExpenses.length,
@@ -49,8 +41,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       dummyExpenses.remove(expense);
                     });
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Expense Deleted 🗑️"),
+                      SnackBar(
+                        content: Text("${'expense deleted'.tr} 🗑️"),
                         duration: Duration(seconds: 2),
                       ),
                     );
@@ -105,8 +97,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
               setState(() {});
             },
             icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text(
-              "Add New Expense",
+            label: Text(
+              'add_expense'.tr,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,

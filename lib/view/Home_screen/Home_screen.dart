@@ -7,6 +7,7 @@ import 'package:savelt_app/view/Home_screen/widgets/dashboard_content.dart';
 import 'package:savelt_app/view/Profile_screen/Profile_screen.dart';
 import 'package:savelt_app/view/SaveIt_chat_screen/SaveIt_chat_screen.dart';
 import 'package:savelt_app/view/Settings_screen/Settings_screen.dart';
+import 'package:savelt_app/model/installment_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-     DashboardContent(),
+    DashboardContent(),
     SaveItChatScreen(),
     ProfilePage(),
   ];
@@ -62,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Text(
-                  "Hello...",
+                  "",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -71,8 +72,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               }
               if (!snapshot.hasData || !snapshot.data!.exists) {
-                return const Text(
-                  "Hello, User",
+                return Text(
+                  "hello_user".tr,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -83,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final userData = snapshot.data!.data() as Map<String, dynamic>;
               final username = userData['username'] ?? "User";
               return Text(
-                "Hello, $username 👋",
+                "hello_name".trParams({"name": username}),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 22,
@@ -199,10 +200,16 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'SaveIt Chat'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "home".tr),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat),
+            label: "saveit_chat".tr,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: "profile".tr,
+          ),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.green,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/get_utils.dart';
 
 class Currencyandamount extends StatelessWidget {
   final String currency;
@@ -11,7 +12,7 @@ class Currencyandamount extends StatelessWidget {
     required this.currency,
     required this.currencychange,
     required this.currencysaved,
-    required this.amountsaved
+    required this.amountsaved,
   });
 
   @override
@@ -22,26 +23,27 @@ class Currencyandamount extends StatelessWidget {
           flex: 2,
           child: DropdownButtonFormField<String>(
             decoration: InputDecoration(
-              labelText: 'Currency',
+              labelText: 'currency'.tr,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-              value: currency,
-              items: ['USD','EUR','EGP'].map((c)=>DropdownMenuItem(
-                  child: Text(c),
-                value: c,
-              )).toList(),
-              onChanged: currencychange,
-              onSaved: currencysaved,
+            value: currency,
+            items: [
+              'USD',
+              'EUR',
+              'EGP',
+            ].map((c) => DropdownMenuItem(child: Text(c), value: c)).toList(),
+            onChanged: currencychange,
+            onSaved: currencysaved,
           ),
         ),
-        SizedBox(width: 10,),
+        SizedBox(width: 10),
         Expanded(
           flex: 3,
           child: TextFormField(
             decoration: InputDecoration(
-              labelText: 'Amount',
+              labelText: 'Amount'.tr,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
               ),

@@ -6,6 +6,7 @@ import 'widgets/message_style.dart';
 import 'widgets/thinking_bubble.dart';
 import 'widgets/input_bar.dart';
 import 'widgets/service.dart';
+import 'package:firebase_auth/firebase_auth.dart'; //  اضافه مهمه
 
 class SaveItChatScreen extends StatefulWidget {
   const SaveItChatScreen({super.key});
@@ -18,15 +19,23 @@ class _SaveItChatScreenState extends State<SaveItChatScreen> {
   final List<ChatMessage> _messages = <ChatMessage>[];
   bool _isThinking = false;
 
+  User? get _currentUser =>
+      FirebaseAuth.instance.currentUser; //  المستخدم الحالي
+  String get _chatKey =>
+      "chat_history_${_currentUser?.uid ?? 'guest'}"; // مفتاح خاص
+  bool get _isAnonymous => _currentUser?.isAnonymous ?? true; //  مجهول ولا لا
+
   @override
   void initState() {
     super.initState();
-    _loadMessages();
+    if (!_isAnonymous) {
+      _loadMessages(); //  بس لو مش مجهول
+    }
   }
 
   Future<void> _loadMessages() async {
     final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString('chat_history');
+    final data = prefs.getString(_chatKey);
     if (data != null) {
       final decoded = jsonDecode(data) as List;
       setState(() {
@@ -45,6 +54,7 @@ class _SaveItChatScreenState extends State<SaveItChatScreen> {
   }
 
   Future<void> _saveMessages() async {
+    if (_isAnonymous) return; //  ما يحفظش لو مجهول
     final prefs = await SharedPreferences.getInstance();
     final data = _messages
         .map(
@@ -55,7 +65,7 @@ class _SaveItChatScreenState extends State<SaveItChatScreen> {
           },
         )
         .toList();
-    await prefs.setString('chat_history', jsonEncode(data));
+    await prefs.setString(_chatKey, jsonEncode(data));
   }
 
   Future<void> _onSend(String text) async {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/get_utils.dart';
 
 class AddIncomeButton extends StatelessWidget {
   final VoidCallback onPressed;
@@ -12,8 +13,8 @@ class AddIncomeButton extends StatelessWidget {
       margin: const EdgeInsets.all(10),
       child: ElevatedButton.icon(
         icon: const Icon(Icons.add, size: 40, color: Colors.white),
-        label: const Text(
-          "Add New Income",
+        label: Text(
+          "add_income".tr,
           style: TextStyle(color: Colors.white, fontSize: 20),
         ),
         style: ElevatedButton.styleFrom(

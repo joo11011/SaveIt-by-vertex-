@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:savelt_app/model/dummy_expenses.dart';
 import 'package:savelt_app/view/Expenses_screen/Expenses_screen.dart';
 import 'package:savelt_app/view/Home_screen/widgets/grid_item.dart';
 import 'package:savelt_app/view/Home_screen/widgets/remaining_balance_card.dart';
 import 'package:savelt_app/view/Income_screen/Income_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:savelt_app/view/Installments_screen/Installments_screen.dart';
 
 class DashboardContent extends StatefulWidget {
   const DashboardContent({super.key});
@@ -19,7 +21,20 @@ class _DashboardContentState extends State<DashboardContent> {
         .collection('incomes')
         .get();
     double total = 0.0;
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      if (data.containsKey('amount')) {
+        total += (data['amount'] as num).toDouble();
+      }
+    }
+    return total;
+  }
 
+  Future<double> getTotalInstallments() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('installments')
+        .get();
+    double total = 0.0;
     for (var doc in snapshot.docs) {
       final data = doc.data();
       if (data.containsKey('amount')) {
@@ -32,10 +47,11 @@ class _DashboardContentState extends State<DashboardContent> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: FutureBuilder<double>(
-        future: getTotalIncome(),
+      child: FutureBuilder<List<double>>(
+        future: Future.wait([getTotalIncome(), getTotalInstallments()]),
         builder: (context, snapshot) {
-          final incomeTotal = snapshot.data ?? 0.0;
+          final incomeTotal = snapshot.data?[0] ?? 0.0;
+          final installmentsTotal = snapshot.data?[1] ?? 0.0;
 
           return Column(
             children: [
@@ -54,7 +70,7 @@ class _DashboardContentState extends State<DashboardContent> {
                   children: [
                     GridItem(
                       icon: Icons.arrow_downward_sharp,
-                      title: 'Income',
+                      title: 'income'.tr,
                       amount: '${incomeTotal.toStringAsFixed(2)} SAR',
                       color: Colors.green,
                       onTap: () async {
@@ -64,12 +80,12 @@ class _DashboardContentState extends State<DashboardContent> {
                             builder: (context) => income_screen(),
                           ),
                         );
-                        setState(() {}); // refresh بعد الرجوع
+                        setState(() {});
                       },
                     ),
                     GridItem(
                       icon: Icons.arrow_outward_sharp,
-                      title: 'Expenses',
+                      title: 'expense'.tr,
                       amount: '${totalExpenses.toStringAsFixed(2)} SAR',
                       color: Colors.red,
                       onTap: () async {
@@ -84,15 +100,24 @@ class _DashboardContentState extends State<DashboardContent> {
                     ),
                     GridItem(
                       icon: Icons.account_balance_wallet,
-                      title: 'Savings',
-                      amount: '1,000 SAR',
+                      title: 'savings'.tr,
+                      amount: '1,000 SAR', // ممكن تعملها ديناميكي بعدين
                       color: Colors.blue,
                     ),
                     GridItem(
                       icon: Icons.payment,
-                      title: 'Installments',
-                      amount: '2,000 SAR',
+                      title: 'installments'.tr,
+                      amount:
+                          '${installmentsTotal.toStringAsFixed(2)} SAR', // 🔹 الآن ديناميكي
                       color: Colors.yellow,
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => InstallmentsScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

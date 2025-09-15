@@ -68,31 +68,31 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title:  Text("Personal Information".tr)),
+      appBar: AppBar(title: Text("Personal Information".tr)),
       body: ListView(
         children: [
           ListTile(
             leading: const Icon(Icons.person),
-            title: Text("Name: ${name ?? ""}"),
+            title: Text("${'Name'.tr}: ${name ?? ""}"),
             trailing: IconButton(
               icon: const Icon(Icons.edit),
-              onPressed: () => _editField("Name".tr, name),
+              onPressed: () => _editField("Name", name),
             ),
           ),
           ListTile(
             leading: const Icon(Icons.location_on),
-            title: Text("Location: ${location ?? ""}"),
+            title: Text("${'City'.tr}: ${location ?? ""}"),
             trailing: IconButton(
               icon: const Icon(Icons.edit),
-              onPressed: () => _editField("Location".tr, location),
+              onPressed: () => _editField("Location", location),
             ),
           ),
           ListTile(
             leading: const Icon(Icons.info),
-            title: Text("Bio: ${bio ?? ""}"),
+            title: Text("${'bio'.tr}: ${bio ?? ""}"),
             trailing: IconButton(
               icon: const Icon(Icons.edit),
-              onPressed: () => _editField("Bio".tr, bio),
+              onPressed: () => _editField("Bio", bio),
             ),
           ),
         ],

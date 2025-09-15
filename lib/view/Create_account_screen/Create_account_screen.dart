@@ -1,3 +1,4 @@
+import 'package:savelt_app/view/Forget_password_screen/forgot_password_screen.dart';
 import '../../controller/register_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -172,13 +173,34 @@ class RegisterPage extends StatelessWidget {
                     },
                   ),
                 ),
-                SizedBox(height: 30),
+                //SizedBox(height: 30),
+
+                // زرار "Forgot Password?" الجديد
+                const SizedBox(height: 5),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Get.to(() => ForgotPasswordScreen());
+                    },
+                    child: Text(
+                      'Forgot Password?',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
 
                 // Button
                 ElevatedButton(
                   onPressed: () {
                     if (controller.formKey.currentState!.validate()) {
-                      controller.register();
+                      controller.register(context);
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -205,14 +227,14 @@ class RegisterPage extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.facebook,
-                        color: Colors.blue[800],
-                        size: 35,
-                      ),
-                      onPressed: controller.registerWithFacebook,
-                    ),
+                    // IconButton(
+                    //   icon: Icon(
+                    //     Icons.facebook,
+                    //     color: Colors.blue[800],
+                    //     size: 35,
+                    //   ),
+                    //   onPressed: controller.registerWithFacebook,
+                    // ),
                     SizedBox(width: 20),
                     IconButton(
                       icon: Icon(
@@ -220,7 +242,7 @@ class RegisterPage extends StatelessWidget {
                         color: Colors.red,
                         size: 40,
                       ),
-                      onPressed: controller.registerWithGoogle,
+                      onPressed: () => controller.registerWithGoogle(context),
                     ),
                     const SizedBox(width: 20),
                     IconButton(
@@ -229,7 +251,7 @@ class RegisterPage extends StatelessWidget {
                         color: Colors.grey,
                         size: 35,
                       ),
-                      onPressed: controller.registerAnonymously,
+                      onPressed: () => controller.registerAnonymously(context),
                       tooltip: "Guest",
                     ),
                   ],

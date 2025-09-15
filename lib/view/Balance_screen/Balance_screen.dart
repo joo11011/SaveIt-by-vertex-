@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../../core/provider/currency_provider.dart';
 import '../../core/provider/firestore_service.dart';
 import '../add_installments_screen/Add_installments_screen.dart';
-import 'widgets/balance_card.dart'; // استدعاء الكارد هنا
+import 'widgets/balance_card.dart';
 
 class BalanceScreen extends StatefulWidget {
   const BalanceScreen({super.key});
@@ -44,6 +45,11 @@ class _BalanceScreenState extends State<BalanceScreen>
 
   @override
   Widget build(BuildContext context) {
+    final firestoreService = Provider.of<FirestoreService>(
+      context,
+      listen: false,
+    );
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -53,9 +59,9 @@ class _BalanceScreenState extends State<BalanceScreen>
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Balance',
-          style: TextStyle(
+        title: Text(
+          'Balance'.tr,
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -143,7 +149,7 @@ class _BalanceScreenState extends State<BalanceScreen>
               children: [
                 const SizedBox(height: 20),
 
-                // هنا نستخدم BalanceCard بدل الكود المكرر
+                // الكارت الرئيسي
                 const BalanceCard(),
 
                 const SizedBox(height: 40),
@@ -170,12 +176,20 @@ class _BalanceScreenState extends State<BalanceScreen>
                       AnimatedBuilder(
                         animation: _progressAnimation,
                         builder: (context, child) {
-                          // هنحسب النسبة باستخدام Provider FirestoreService
                           return StreamBuilder<Map<String, dynamic>>(
-                            stream: FirestoreService()
-                                .getUserFinancialsStream(),
+                            stream: firestoreService
+                                .getUserFinancialsStream(), 
                             builder: (context, snapshot) {
-                              final userData = snapshot.data ?? {};
+                              if (!snapshot.hasData) {
+                                return const CircularProgressIndicator(
+                                  strokeWidth: 12,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.grey,
+                                  ),
+                                );
+                              }
+
+                              final userData = snapshot.data!;
                               final balance = (userData['balance'] ?? 0.0)
                                   .toDouble();
                               final income = (userData['income'] ?? 0.0)
@@ -188,8 +202,7 @@ class _BalanceScreenState extends State<BalanceScreen>
                                   );
 
                               return CircularProgressIndicator(
-                                value:
-                                    (allocationPercentage / 100) *
+                                value: (allocationPercentage / 100) *
                                     _progressAnimation.value,
                                 strokeWidth: 12,
                                 backgroundColor: Colors.transparent,
