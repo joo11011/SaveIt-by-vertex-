@@ -1,57 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'auth_service.dart';
+import '../../services/auth_service.dart';
 
 class CurrencyProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   String _selectedCurrency = 'SAR';
   bool _isLoading = false;
-  
+
   final Map<String, Map<String, String>> _currencyData = {
-    'SAR': {
-      'symbol': 'SAR',
-      'name': 'Saudi Riyal',
-      'flag': '🇸🇦',
-    },
-    'USD': {
-      'symbol': '\$',
-      'name': 'US Dollar',
-      'flag': '🇺🇸',
-    },
-    'EUR': {
-      'symbol': '€',
-      'name': 'Euro',
-      'flag': '🇪🇺',
-    },
-    'EGP': {
-      'symbol': 'EG£',
-      'name': 'Egyptian Pound',
-      'flag': '🇪🇬',
-    },
-    'GBP': {
-      'symbol': '£',
-      'name': 'British Pound',
-      'flag': '🇬🇧',
-    },
-    'JPY': {
-      'symbol': '¥',
-      'name': 'Japanese Yen',
-      'flag': '🇯🇵',
-    },
+    'SAR': {'symbol': 'SAR', 'name': 'Saudi Riyal', 'flag': '🇸🇦'},
+    'USD': {'symbol': '\$', 'name': 'US Dollar', 'flag': '🇺🇸'},
+    'EUR': {'symbol': '€', 'name': 'Euro', 'flag': '🇪🇺'},
+    'EGP': {'symbol': 'EG£', 'name': 'Egyptian Pound', 'flag': '🇪🇬'},
+    'GBP': {'symbol': '£', 'name': 'British Pound', 'flag': '🇬🇧'},
+    'JPY': {'symbol': '¥', 'name': 'Japanese Yen', 'flag': '🇯🇵'},
   };
 
   // Getters
   String get selectedCurrency => _selectedCurrency;
-  String get currencySymbol => _currencyData[_selectedCurrency]?['symbol'] ?? 'SAR';
-  String get currencyName => _currencyData[_selectedCurrency]?['name'] ?? 'Saudi Riyal';
-  String get currencyFlag => _currencyData[_selectedCurrency]?['flag'] ?? '🇸🇦';
+  String get currencySymbol =>
+      _currencyData[_selectedCurrency]?['symbol'] ?? 'SAR';
+  String get currencyName =>
+      _currencyData[_selectedCurrency]?['name'] ?? 'Saudi Riyal';
+  String get currencyFlag =>
+      _currencyData[_selectedCurrency]?['flag'] ?? '🇸🇦';
   bool get isLoading => _isLoading;
-  
+
   List<String> get availableCurrencies => _currencyData.keys.toList();
-  
+
   Map<String, String> getCurrencyInfo(String currencyCode) {
     return _currencyData[currencyCode] ?? _currencyData['SAR']!;
   }
@@ -68,9 +47,10 @@ class CurrencyProvider extends ChangeNotifier {
             .collection('users')
             .doc(user.uid)
             .get();
-        
+
         if (userDoc.exists) {
-          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
           String savedCurrency = userData['currency'] ?? 'SAR';
           _selectedCurrency = savedCurrency;
         }
@@ -87,13 +67,13 @@ class CurrencyProvider extends ChangeNotifier {
   // Set currency and save to Firebase
   Future<void> setCurrency(String currency) async {
     if (!_currencyData.containsKey(currency)) return;
-    
+
     _isLoading = true;
     notifyListeners();
 
     try {
       _selectedCurrency = currency;
-      
+
       // Save to Firebase if user is authenticated
       User? user = _authService.currentUser;
       if (user != null) {
@@ -111,9 +91,13 @@ class CurrencyProvider extends ChangeNotifier {
   }
 
   // Format amount with current currency
-  String formatAmount(double amount, {bool showSymbol = true, bool showCode = false}) {
+  String formatAmount(
+    double amount, {
+    bool showSymbol = true,
+    bool showCode = false,
+  }) {
     String formattedAmount = amount.toStringAsFixed(2);
-    
+
     if (showSymbol && showCode) {
       return '$currencySymbol$formattedAmount $_selectedCurrency';
     } else if (showSymbol) {
@@ -142,11 +126,9 @@ class CurrencyProvider extends ChangeNotifier {
     User? user = _authService.currentUser;
     if (user == null) return Stream.value('SAR');
 
-    return _firestore
-        .collection('users')
-        .doc(user.uid)
-        .snapshots()
-        .map((snapshot) {
+    return _firestore.collection('users').doc(user.uid).snapshots().map((
+      snapshot,
+    ) {
       if (snapshot.exists) {
         Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
         String currency = data['currency'] ?? 'SAR';

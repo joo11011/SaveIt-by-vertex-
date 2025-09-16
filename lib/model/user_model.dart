@@ -40,7 +40,9 @@ class UserModel {
       'savings': savings,
       'totalInstallments': totalInstallments,
       'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : FieldValue.serverTimestamp(),
+      'updatedAt': updatedAt != null
+          ? Timestamp.fromDate(updatedAt!)
+          : FieldValue.serverTimestamp(),
     };
   }
 
@@ -57,8 +59,8 @@ class UserModel {
       savings: (map['savings'] ?? 0.0).toDouble(),
       totalInstallments: (map['totalInstallments'] ?? 0.0).toDouble(),
       createdAt: (map['createdAt'] as Timestamp).toDate(),
-      updatedAt: map['updatedAt'] != null 
-          ? (map['updatedAt'] as Timestamp).toDate() 
+      updatedAt: map['updatedAt'] != null
+          ? (map['updatedAt'] as Timestamp).toDate()
           : null,
     );
   }

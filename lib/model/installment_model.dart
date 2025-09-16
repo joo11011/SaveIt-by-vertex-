@@ -1,4 +1,6 @@
+// Refactored lib/model/installment_model.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class InstallmentModel {
   final String? id;
@@ -11,6 +13,9 @@ class InstallmentModel {
   final bool isPaid;
   final DateTime? paidDate;
   final DateTime createdAt;
+  final IconData? icon;
+  final Color? iconColor;
+  final String timeStatus;
 
   InstallmentModel({
     this.id,
@@ -23,6 +28,9 @@ class InstallmentModel {
     this.isPaid = false,
     this.paidDate,
     required this.createdAt,
+    this.icon,
+    this.iconColor,
+    this.timeStatus = '',
   });
 
   // Convert to Map for Firestore
@@ -37,16 +45,31 @@ class InstallmentModel {
       'isPaid': isPaid,
       'paidDate': paidDate != null ? Timestamp.fromDate(paidDate!) : null,
       'createdAt': Timestamp.fromDate(createdAt),
+      'icon': icon?.codePoint,
+      'iconColor': iconColor?.value,
+      'timeStatus': timeStatus,
     };
   }
 
   // Create from Firestore document
   factory InstallmentModel.fromMap(Map<String, dynamic> map, String documentId) {
+    // Handle the case where old data has a dueDate as a String
+    DateTime parsedDueDate;
+    if (map['dueDate'] is Timestamp) {
+      parsedDueDate = (map['dueDate'] as Timestamp).toDate();
+    } else if (map['dueDate'] is String) {
+      // Gracefully handle malformed data by using a default date
+      parsedDueDate = DateTime(2000); 
+    } else {
+      // Default to a safe value
+      parsedDueDate = DateTime(2000); 
+    }
+
     return InstallmentModel(
       id: documentId,
       installmentName: map['installmentName'] ?? '',
       totalAmount: (map['totalAmount'] ?? 0.0).toDouble(),
-      dueDate: (map['dueDate'] as Timestamp).toDate(),
+      dueDate: parsedDueDate,
       category: map['category'] ?? '',
       notes: map['notes'] ?? '',
       currency: map['currency'] ?? 'SAR',
@@ -55,6 +78,13 @@ class InstallmentModel {
           ? (map['paidDate'] as Timestamp).toDate() 
           : null,
       createdAt: (map['createdAt'] as Timestamp).toDate(),
+      icon: map['icon'] != null 
+          ? IconData(map['icon'], fontFamily: 'MaterialIcons')
+          : null,
+      iconColor: map['iconColor'] != null 
+          ? Color(map['iconColor'] as int)
+          : null,
+      timeStatus: map['timeStatus'] ?? '',
     );
   }
 
@@ -70,6 +100,9 @@ class InstallmentModel {
     bool? isPaid,
     DateTime? paidDate,
     DateTime? createdAt,
+    IconData? icon,
+    Color? iconColor,
+    String? timeStatus,
   }) {
     return InstallmentModel(
       id: id ?? this.id,
@@ -82,37 +115,9 @@ class InstallmentModel {
       isPaid: isPaid ?? this.isPaid,
       paidDate: paidDate ?? this.paidDate,
       createdAt: createdAt ?? this.createdAt,
+      icon: icon ?? this.icon,
+      iconColor: iconColor ?? this.iconColor,
+      timeStatus: timeStatus ?? this.timeStatus,
     );
-  }
-
-  @override
-  String toString() {
-    return 'InstallmentModel(id: $id, installmentName: $installmentName, totalAmount: $totalAmount, dueDate: $dueDate, category: $category, currency: $currency, isPaid: $isPaid)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is InstallmentModel &&
-        other.id == id &&
-        other.installmentName == installmentName &&
-        other.totalAmount == totalAmount &&
-        other.dueDate == dueDate &&
-        other.category == category &&
-        other.notes == notes &&
-        other.currency == currency &&
-        other.isPaid == isPaid;
-  }
-
-  @override
-  int get hashCode {
-    return id.hashCode ^
-        installmentName.hashCode ^
-        totalAmount.hashCode ^
-        dueDate.hashCode ^
-        category.hashCode ^
-        notes.hashCode ^
-        currency.hashCode ^
-        isPaid.hashCode;
   }
 }

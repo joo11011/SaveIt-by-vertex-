@@ -1,3 +1,4 @@
+// Refactored lib/core/provider/firestore_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../model/installment_model.dart';
@@ -20,7 +21,7 @@ class FirestoreService {
           .collection('installments')
           .add(installment.toMap());
 
-      await _updateUserFinancials();
+      await updateUserFinancials();
       return true;
     } catch (e) {
       print('Add installment error: $e');
@@ -38,20 +39,20 @@ class FirestoreService {
         .collection('installments')
         .orderBy('dueDate', descending: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-        .map((doc) => InstallmentModel.fromMap(doc.data(), doc.id))
-        .toList());
+        .map(
+          (snapshot) => snapshot.docs
+          .map((doc) => InstallmentModel.fromMap(doc.data(), doc.id))
+          .toList(),
+    );
   }
 
   /// Get user financial data stream (real-time updates)
   Stream<Map<String, dynamic>> getUserFinancialsStream() {
     if (_userId == null) return Stream.value({});
 
-    return _firestore
-        .collection('users')
-        .doc(_userId)
-        .snapshots()
-        .map((snapshot) {
+    return _firestore.collection('users').doc(_userId).snapshots().map((
+        snapshot,
+        ) {
       if (snapshot.exists && snapshot.data() != null) {
         return snapshot.data() as Map<String, dynamic>;
       }
@@ -60,10 +61,38 @@ class FirestoreService {
   }
 
   /// Update user financial data (balance + totalInstallments)
-  Future<void> _updateUserFinancials() async {
+  Future<void> updateUserFinancials() async {
     if (_userId == null) return;
 
     try {
+      // Get all incomes
+      QuerySnapshot incomesSnapshot = await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('incomes')
+          .get();
+
+      double totalIncome = 0.0;
+      for (var doc in incomesSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final amount = (data['amount'] ?? 0).toDouble();
+        totalIncome += amount;
+      }
+
+      // Get all expenses
+      QuerySnapshot expensesSnapshot = await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('expenses')
+          .get();
+
+      double totalExpenses = 0.0;
+      for (var doc in expensesSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final amount = (data['amount'] ?? 0).toDouble();
+        totalExpenses += amount;
+      }
+
       // Get all installments
       QuerySnapshot installmentsSnapshot = await _firestore
           .collection('users')
@@ -75,31 +104,34 @@ class FirestoreService {
       for (var doc in installmentsSnapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
         final rawAmount = data['totalAmount'] ?? 0;
-        final amount =
-        (rawAmount is int) ? rawAmount.toDouble() : rawAmount as double;
+        final amount = (rawAmount is int)
+            ? rawAmount.toDouble()
+            : rawAmount as double;
         totalInstallments += amount;
       }
 
       // Get current user data
-      DocumentSnapshot userDoc =
-      await _firestore.collection('users').doc(_userId).get();
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users')
+          .doc(_userId)
+          .get();
 
       if (!userDoc.exists || userDoc.data() == null) return;
 
       Map<String, dynamic> userData =
           userDoc.data() as Map<String, dynamic>? ?? {};
-      double income =
-      (userData['income'] ?? 0).toDouble(); // Ensure double values
-      double expenses = (userData['expenses'] ?? 0).toDouble();
       double savings = (userData['savings'] ?? 0).toDouble();
 
       // Calculate new balance
-      double balance = income - expenses - totalInstallments + savings;
+      double balance = totalIncome - totalExpenses - totalInstallments + savings;
 
       // Update user document
       await _firestore.collection('users').doc(_userId).update({
         'balance': balance,
+        'income': totalIncome,
+        'expenses': totalExpenses,
         'totalInstallments': totalInstallments,
+        'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
       print('Update financials error: $e');
@@ -111,13 +143,10 @@ class FirestoreService {
     if (_userId == null) return;
 
     try {
-      await _firestore.collection('users').doc(_userId).set(
-        {
-          'income': income,
-        },
-        SetOptions(merge: true),
-      );
-      await _updateUserFinancials();
+      await _firestore.collection('users').doc(_userId).set({
+        'income': income,
+      }, SetOptions(merge: true));
+      await updateUserFinancials();
     } catch (e) {
       print('Update income error: $e');
     }
@@ -128,13 +157,10 @@ class FirestoreService {
     if (_userId == null) return;
 
     try {
-      await _firestore.collection('users').doc(_userId).set(
-        {
-          'expenses': expenses,
-        },
-        SetOptions(merge: true),
-      );
-      await _updateUserFinancials();
+      await _firestore.collection('users').doc(_userId).set({
+        'expenses': expenses,
+      }, SetOptions(merge: true));
+      await updateUserFinancials();
     } catch (e) {
       print('Update expenses error: $e');
     }
@@ -145,13 +171,10 @@ class FirestoreService {
     if (_userId == null) return;
 
     try {
-      await _firestore.collection('users').doc(_userId).set(
-        {
-          'savings': savings,
-        },
-        SetOptions(merge: true),
-      );
-      await _updateUserFinancials();
+      await _firestore.collection('users').doc(_userId).set({
+        'savings': savings,
+      }, SetOptions(merge: true));
+      await updateUserFinancials();
     } catch (e) {
       print('Update savings error: $e');
     }
@@ -169,7 +192,7 @@ class FirestoreService {
           .doc(installmentId)
           .delete();
 
-      await _updateUserFinancials();
+      await updateUserFinancials();
       return true;
     } catch (e) {
       print('Delete installment error: $e');
@@ -187,12 +210,9 @@ class FirestoreService {
           .doc(_userId)
           .collection('installments')
           .doc(installmentId)
-          .update({
-        'isPaid': true,
-        'paidDate': FieldValue.serverTimestamp(),
-      });
+          .update({'isPaid': true, 'paidDate': FieldValue.serverTimestamp()});
 
-      await _updateUserFinancials();
+      await updateUserFinancials();
       return true;
     } catch (e) {
       print('Mark paid error: $e');
