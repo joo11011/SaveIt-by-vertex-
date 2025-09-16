@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import '../../services/firebase_service.dart';
+import '../../model/installment_model.dart';
 import '../Installments_screen/Installments_screen.dart';
 
 class AddInstallmentScreen extends StatefulWidget {
-  final Installment? installmentToEdit;
+  final InstallmentModel? installmentToEdit;
 
   const AddInstallmentScreen({super.key, this.installmentToEdit});
 
@@ -14,6 +16,7 @@ class AddInstallmentScreen extends StatefulWidget {
 }
 
 class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
+  final FirebaseService _firebaseService = FirebaseService(); // Create an instance
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
@@ -46,14 +49,13 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
   }
 
   void _populateFields() {
-    final installment = widget.installmentToEdit!;
-    _titleController.text = installment.title;
-    _amountController.text = installment.amount.toString();
-    _categoryController.text = installment.category;
-    _notesController.text = installment.notes;
-
-    if (installment.dueDate.isNotEmpty) {
-      _dueDateController.text = installment.dueDate;
+    if (widget.installmentToEdit != null) {
+      _titleController.text = widget.installmentToEdit!.installmentName;
+      _amountController.text = widget.installmentToEdit!.totalAmount.toString();
+      _selectedDate = widget.installmentToEdit!.dueDate;
+      _categoryController.text = widget.installmentToEdit!.category;
+      _notesController.text = widget.installmentToEdit!.notes;
+      _dueDateController.text = DateFormat('MM/dd/yyyy').format(_selectedDate!);
     }
   }
 
@@ -85,6 +87,7 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
 
   Future<void> _saveInstallment() async {
     if (!_formKey.currentState!.validate()) return;
+
     if (_selectedDate == null) {
       ScaffoldMessenger.of(
         context,
@@ -97,29 +100,31 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
     });
 
     try {
-      final installment = Installment(
+      final installment = InstallmentModel(
         id: widget.installmentToEdit?.id,
-        title: _titleController.text.trim(),
-        dueDate:
-            'Due on ${_selectedDate!.day}th ${_getMonthName(_selectedDate!.month)}',
-        amount: double.parse(_amountController.text),
-        status: widget.installmentToEdit?.status ?? 'upcoming',
+        installmentName: _titleController.text.trim(),
+        dueDate: _selectedDate!,
+        totalAmount: double.parse(_amountController.text),
+        category: _categoryController.text.trim(),
+        notes: _notesController.text.trim(),
+        currency: _selectedCurrency,
+        isPaid: widget.installmentToEdit?.isPaid ?? false,
+        paidDate: widget.installmentToEdit?.paidDate,
+        createdAt: widget.installmentToEdit?.createdAt ?? DateTime.now(),
         icon: Icons.receipt,
         iconColor: Colors.blue,
         timeStatus: _calculateTimeStatus(_selectedDate!),
-        category: _categoryController.text.trim(),
-        notes: _notesController.text.trim(),
       );
 
       if (widget.installmentToEdit != null) {
-        await FirebaseService.updateInstallment(installment);
+        await _firebaseService.updateInstallment(installment);
         if (mounted) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text('installment_updated'.tr)));
         }
       } else {
-        await FirebaseService.addInstallment(installment);
+        await _firebaseService.addInstallment(installment);
         if (mounted) {
           ScaffoldMessenger.of(
             context,
@@ -441,8 +446,8 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: _categoryController,
+        DropdownButtonFormField<String>(
+          value: _categoryController.text.isEmpty ? null : _categoryController.text,
           decoration: InputDecoration(
             hintText: 'select_category'.tr,
             hintStyle: TextStyle(color: Colors.grey[400]),
@@ -460,25 +465,22 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Colors.orange, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-            suffixIcon: PopupMenuButton<String>(
-              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-              onSelected: (String value) {
-                _categoryController.text = value;
-              },
-              itemBuilder: (BuildContext context) {
-                return _categories.map((String category) {
-                  return PopupMenuItem<String>(
-                    value: category,
-                    child: Text(category),
-                  );
-                }).toList();
-              },
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
+          items: _categories.map((String category) {
+            return DropdownMenuItem<String>(
+              value: category,
+              child: Text(category),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              setState(() {
+                _categoryController.text = newValue;
+              });
+            }
+          },
+          validator: (value) => value == null || value.isEmpty ? 'Please select a category' : null,
         ),
       ],
     );

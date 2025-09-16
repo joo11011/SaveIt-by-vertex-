@@ -35,7 +35,7 @@ class GridItem extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 25,
-                backgroundColor: color.withOpacity(0.2),
+                backgroundColor: color.withAlpha((0.2 * 255).toInt()),
                 child: Icon(icon, size: 40, color: Colors.black54),
               ),
               const SizedBox(height: 10),

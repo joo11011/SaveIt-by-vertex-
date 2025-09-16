@@ -1,8 +1,13 @@
+// Refactored lib/view/SaveIt_chat_screen/widgets/service.dart
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'responses.dart';
 
 class Service {
-  static const String _apiKey = "AIzaSyC11ZWsEI9xVngdGOBfRS2VomToIdAhGgA";
+  // IMPORTANT: The API key is now a placeholder.
+  // In a production app, you MUST NOT store API keys directly in the client-side code.
+  // Instead, use a secure backend proxy or a cloud function (e.g., Firebase Functions)
+  // to make the API call and expose a secure endpoint to your app.
+  static const String _apiKey = "YOUR_SECURE_API_KEY_HERE";
 
   static Future<String> sendMessage(String text) async {
     final localReply = LocalResponses.getReply(text);

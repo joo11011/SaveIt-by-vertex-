@@ -1,61 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/utils.dart';
-import 'package:savelt_app/view/Home_screen/Home_screen.dart';
+import 'package:intl/intl.dart';
+import '../../model/installment_view_model.dart';
+import '../../model/installment_model.dart';
 import '../../services/firebase_service.dart';
 import '../Add_installments_screen/Add_installments_screen.dart';
-
-class Installment {
-  final String? id;
-  final String title;
-  final String dueDate;
-  final double amount;
-  final String status;
-  final IconData icon;
-  final Color iconColor;
-  final String timeStatus;
-  final String category;
-  final String notes;
-
-  Installment({
-    this.id,
-    required this.title,
-    required this.dueDate,
-    required this.amount,
-    required this.status,
-    required this.icon,
-    required this.iconColor,
-    required this.timeStatus,
-    this.category = '',
-    this.notes = '',
-  });
-
-  Installment copyWith({
-    String? id,
-    String? title,
-    String? dueDate,
-    double? amount,
-    String? status,
-    IconData? icon,
-    Color? iconColor,
-    String? timeStatus,
-    String? category,
-    String? notes,
-  }) {
-    return Installment(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      dueDate: dueDate ?? this.dueDate,
-      amount: amount ?? this.amount,
-      status: status ?? this.status,
-      icon: icon ?? this.icon,
-      iconColor: iconColor ?? this.iconColor,
-      timeStatus: timeStatus ?? this.timeStatus,
-      category: category ?? this.category,
-      notes: notes ?? this.notes,
-    );
-  }
-}
+import '../Home_screen/Home_screen.dart';
+import 'dart:async';
 
 class InstallmentsScreen extends StatefulWidget {
   const InstallmentsScreen({super.key});
@@ -66,21 +17,29 @@ class InstallmentsScreen extends StatefulWidget {
 
 class _InstallmentsScreenState extends State<InstallmentsScreen>
     with TickerProviderStateMixin {
+  final FirebaseService _firebaseService = FirebaseService(); // Create an instance
   bool _alarmEnabled = true;
   late AnimationController _alarmController;
   late Animation<double> _alarmAnimation;
+  StreamSubscription? _installmentsSubscription;
+  List<InstallmentViewModel> _allInstallments = [];
+  bool _isLoading = true;
+  String? _error;
 
-  List<Installment> _allInstallments = [];
+  List<InstallmentViewModel> get upcomingInstallments =>
+      _allInstallments.where((i) => !i.isPaid).toList();
 
-  List<Installment> get upcomingInstallments =>
-      _allInstallments.where((i) => i.status == 'upcoming').toList();
-
-  List<Installment> get paidInstallments =>
-      _allInstallments.where((i) => i.status == 'paid').toList();
+  List<InstallmentViewModel> get paidInstallments =>
+      _allInstallments.where((i) => i.isPaid).toList();
 
   @override
   void initState() {
     super.initState();
+    _setupAnimationController();
+    _loadInstallments();
+  }
+
+  void _setupAnimationController() {
     _alarmController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
@@ -89,25 +48,69 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
       CurvedAnimation(parent: _alarmController, curve: Curves.elasticInOut),
     );
 
-    _loadInstallments();
-
     if (_alarmEnabled) {
       _alarmController.repeat(reverse: true);
     }
   }
 
-  // Load installments from Firebase
   void _loadInstallments() {
-    FirebaseService.getInstallmentsStream().listen((installments) {
-      setState(() {
-        _allInstallments = installments;
-      });
+    setState(() {
+      _isLoading = true;
+      _error = null;
     });
+
+    try {
+      _installmentsSubscription = _firebaseService.getInstallmentsStream()
+          .listen(
+            (installments) {
+              if (mounted) {
+                setState(() {
+                  _allInstallments = installments
+                      .map((model) => _mapToViewModel(model))
+                      .toList();
+                  _isLoading = false;
+                });
+              }
+            },
+            onError: (error) {
+              if (mounted) {
+                setState(() {
+                  _error = error.toString();
+                  _isLoading = false;
+                });
+              }
+            },
+          );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  InstallmentViewModel _mapToViewModel(InstallmentModel model) {
+    return InstallmentViewModel(
+      id: model.id,
+      title: model.installmentName,
+      dueDate: model.dueDate,
+      amount: model.totalAmount,
+      isPaid: model.isPaid,
+      icon: model.icon ?? Icons.attach_money,
+      iconColor: model.iconColor ?? Colors.orange,
+      timeStatus: model.timeStatus ?? '',
+      category: model.category ?? '',
+      notes: model.notes ?? '',
+      createdAt: model.createdAt,
+    );
   }
 
   @override
   void dispose() {
     _alarmController.dispose();
+    _installmentsSubscription?.cancel();
     super.dispose();
   }
 
@@ -123,14 +126,14 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
     });
   }
 
-  void _toggleInstallmentStatus(int index, String currentStatus) async {
-    final installment = currentStatus == 'upcoming'
+  void _toggleInstallmentStatus(int index, String listType) async {
+    final installment = listType == 'upcoming'
         ? upcomingInstallments[index]
         : paidInstallments[index];
 
     if (installment.id != null) {
-      final newStatus = currentStatus == 'upcoming' ? 'paid' : 'upcoming';
-      await FirebaseService.updateInstallmentStatus(installment.id!, newStatus);
+      final newIsPaid = !installment.isPaid;
+      await _firebaseService.updateInstallmentStatus(installment.id!, newIsPaid);
     }
   }
 
@@ -153,7 +156,7 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
   }
 
   Future<void> _addNewInstallment() async {
-    final result = await Navigator.of(context).push<Installment>(
+    final result = await Navigator.of(context).push<InstallmentModel>(
       MaterialPageRoute(builder: (context) => const AddInstallmentScreen()),
     );
 
@@ -164,11 +167,25 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
     }
   }
 
-  Future<void> _editInstallment(Installment installment) async {
-    final result = await Navigator.of(context).push<Installment>(
+  Future<void> _editInstallment(InstallmentViewModel installment) async {
+    final result = await Navigator.of(context).push<InstallmentModel>(
       MaterialPageRoute(
-        builder: (context) =>
-            AddInstallmentScreen(installmentToEdit: installment),
+        builder: (context) => AddInstallmentScreen(
+          installmentToEdit: InstallmentModel(
+            id: installment.id,
+            installmentName: installment.title,
+            totalAmount: installment.amount,
+            dueDate: installment.dueDate,
+            category: installment.category,
+            notes: installment.notes,
+            currency: 'SAR',
+            isPaid: installment.isPaid,
+            createdAt: installment.createdAt,
+            icon: installment.icon,
+            iconColor: installment.iconColor,
+            timeStatus: installment.timeStatus,
+          ),
+        ),
       ),
     );
 
@@ -179,13 +196,13 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
     }
   }
 
-  void _deleteInstallmentFromUI(Installment installment) async {
+  void _deleteInstallmentFromUI(InstallmentViewModel installment) async {
     print('Delete button tapped for installment: ${installment.title}');
 
     if (installment.id != null) {
       print('Deleting installment with ID: ${installment.id}');
       try {
-        await FirebaseService.deleteInstallment(installment.id!);
+        await _firebaseService.deleteInstallment(installment.id!);
         print('Successfully deleted from Firebase');
 
         if (mounted) {
@@ -280,7 +297,7 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            '${totalAmount.toInt()} SAR',
+            '${totalAmount.toStringAsFixed(2)} SAR',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 28,
@@ -299,7 +316,7 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   Text(
-                    '${paidAmount.toInt()} SAR',
+                    '${paidAmount.toStringAsFixed(2)} SAR',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -316,7 +333,7 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   Text(
-                    '${remainingAmount.toInt()} SAR',
+                    '${remainingAmount.toStringAsFixed(2)} SAR',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -333,7 +350,7 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
   }
 
   Widget _buildInstallmentCard(
-    Installment installment,
+    InstallmentViewModel installment,
     int index,
     String listType,
   ) {
@@ -383,7 +400,7 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    installment.dueDate,
+                    DateFormat('MMM d, y').format(installment.dueDate),
                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                   if (installment.timeStatus.isNotEmpty) ...[
@@ -406,7 +423,7 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${installment.amount.toInt()} SAR',
+                  '${installment.amount.toStringAsFixed(2)} SAR',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -425,13 +442,11 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: installment.status == 'upcoming'
-                              ? Colors.green
-                              : Colors.orange,
+                          color: !installment.isPaid ? Colors.green : Colors.orange,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
-                          installment.status == 'upcoming' ? 'Done' : 'Undo',
+                          !installment.isPaid ? 'Done' : 'Undo',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -476,7 +491,7 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
                     GestureDetector(
                       onTap: () => _deleteInstallmentFromUI(installment),
                       child: Icon(
-                        installment.status == 'upcoming'
+                        !installment.isPaid
                             ? Icons.delete_outline
                             : Icons.archive_outlined,
                         color: Colors.grey[400],
@@ -495,6 +510,27 @@ class _InstallmentsScreenState extends State<InstallmentsScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Error: $_error'),
+              ElevatedButton(
+                onPressed: _loadInstallments,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(

@@ -1,3 +1,4 @@
+// Refactored lib/view/Add_new_expenses/Add_new_expenses.dart
 import 'package:flutter/material.dart';
 import 'package:get/get_utils/get_utils.dart';
 import '../../model/category_model.dart';
@@ -41,7 +42,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   void _showAddCategoryDialog() {
-    final TextEditingController _customCategoryController =
+    final TextEditingController customCategoryController =
         TextEditingController();
 
     showDialog(
@@ -50,7 +51,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         return AlertDialog(
           title: const Text("Add Custom Category"),
           content: TextField(
-            controller: _customCategoryController,
+            controller: customCategoryController,
             decoration: const InputDecoration(hintText: "Enter category name"),
           ),
           actions: [
@@ -60,12 +61,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (_customCategoryController.text.isNotEmpty) {
+                if (customCategoryController.text.isNotEmpty) {
                   setState(() {
                     dummyCategories.insert(
                       dummyCategories.length - 1,
                       CategoryModel(
-                        label: _customCategoryController.text,
+                        label: customCategoryController.text,
                         icon: Icons.category,
                       ),
                     );
@@ -82,7 +83,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     );
   }
 
-  void _saveExpense() {
+  void _saveExpense() async {
     final expense = Expense(
       icon: dummyCategories[selectedCategoryIndex].icon,
       title: _nameController.text,
@@ -95,16 +96,24 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     setState(() {
       dummyExpenses.insert(0, expense);
     });
-    ExpenseService().addExpenseToFirebase(
-      expense,
-      notes: _notesController.text,
-    );
 
-    if (mounted) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Expense Added ✅")));
+    try {
+      await ExpenseService().addExpenseToFirebase(
+        expense,
+        notes: _notesController.text,
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Expense Added ✅")));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed to add expense: $e")));
+      }
     }
   }
 
@@ -247,7 +256,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
               const SizedBox(height: 20),
 
-              Text("notes".tr + " " + "optional".tr),
+              Text("${"notes".tr} ${"optional".tr}"),
               const SizedBox(height: 8),
               TextField(
                 controller: _notesController,

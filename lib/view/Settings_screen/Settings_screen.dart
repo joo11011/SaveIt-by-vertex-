@@ -1,13 +1,12 @@
+// Refactored lib/view/Settings_screen/Settings_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controller/settings_controller.dart';
-import '../../../controller/nav_controller.dart';
+import 'package:savelt_app/view/Log_in_screen/Log_in_screen.dart';
+import '../../controller/settings_controller.dart';
 import '../Home_screen/Home_screen.dart';
-import '../Profile_screen/Profile_screen.dart';
-import '../Log_in_screen/Log_in_screen.dart';
 
-class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +17,10 @@ class SettingsPage extends StatelessWidget {
         appBar: AppBar(
           title: Text("settings".tr),
           backgroundColor: Colors.green,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Get.back(),
+          ),
         ),
         body: ListView(
           children: [
@@ -32,7 +35,6 @@ class SettingsPage extends StatelessWidget {
                 ),
               ),
             ),
-
             ListTile(
               leading: const Icon(Icons.language),
               title: Text("language".tr),
@@ -49,22 +51,20 @@ class SettingsPage extends StatelessWidget {
               ),
               onTap: () => _chooseLanguage(context, settingsController),
             ),
-
-            ListTile(
-              leading: const Icon(Icons.brightness_6),
-              title: Text("theme".tr),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    settingsController.darkMode.value ? "dark".tr : "light".tr,
-                  ),
-                  const Icon(Icons.arrow_forward_ios, size: 16),
-                ],
-              ),
-              onTap: () => _chooseTheme(context, settingsController),
-            ),
-
+            // ListTile(
+            //   leading: const Icon(Icons.brightness_6),
+            //   title: Text("theme".tr),
+            //   trailing: Row(
+            //     mainAxisSize: MainAxisSize.min,
+            //     children: [
+            //       Text(
+            //         settingsController.darkMode.value ? "dark".tr : "light".tr,
+            //       ),
+            //       const Icon(Icons.arrow_forward_ios, size: 16),
+            //     ],
+            //   ),
+            //   onTap: () => _chooseTheme(context, settingsController),
+            // ),
             SwitchListTile(
               title: Text("notifications".tr),
               value: settingsController.notificationsEnabled.value,
@@ -72,7 +72,6 @@ class SettingsPage extends StatelessWidget {
                   settingsController.notificationsEnabled.value = val,
               secondary: const Icon(Icons.notifications),
             ),
-
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Text(
@@ -84,21 +83,18 @@ class SettingsPage extends StatelessWidget {
                 ),
               ),
             ),
-
             ListTile(
               leading: const Icon(Icons.help_outline),
               title: Text("help_support".tr),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () => Get.to(() => const HelpSupportPage()),
             ),
-
             ListTile(
               leading: const Icon(Icons.info_outline),
               title: Text("about".tr),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () => Get.to(() => const AboutPage()),
             ),
-
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Text(
@@ -110,7 +106,6 @@ class SettingsPage extends StatelessWidget {
                 ),
               ),
             ),
-
             Center(
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
@@ -128,36 +123,12 @@ class SettingsPage extends StatelessWidget {
                   style: const TextStyle(color: Colors.red, fontSize: 18),
                 ),
                 onPressed: () async {
+                  // This is a placeholder for the actual logout logic
                   Get.offAll(() => LoginPage());
                 },
               ),
             ),
             const SizedBox(height: 20),
-          ],
-        ),
-
-        bottomNavigationBar: BottomNavigationBar(
-          selectedItemColor: Colors.green,
-          unselectedItemColor: Colors.grey,
-          currentIndex: 2, // لأنك في صفحة Settings
-          onTap: (index) {
-            if (index == 0) Get.offAll(() => const HomeScreen());
-            if (index == 1) Get.offAll(() => const ProfilePage());
-            if (index == 2) Get.offAll(() => const SettingsPage());
-          },
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.home),
-              label: "home".tr,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.person),
-              label: "profile".tr,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.settings),
-              label: "settings".tr,
-            ),
           ],
         ),
       ),
@@ -241,7 +212,6 @@ class HelpSupportPage extends StatelessWidget {
   }
 }
 
-// 🔹 About Page
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
 

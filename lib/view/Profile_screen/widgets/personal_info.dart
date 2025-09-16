@@ -1,7 +1,8 @@
+// lib/view/Profile_screen/widgets/personal_info.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PersonalInfoPage extends StatefulWidget {
   const PersonalInfoPage({super.key});
@@ -11,7 +12,6 @@ class PersonalInfoPage extends StatefulWidget {
 }
 
 class _PersonalInfoPageState extends State<PersonalInfoPage> {
-  final user = FirebaseAuth.instance.currentUser!;
   String? name;
   String? location;
   String? bio;
@@ -19,46 +19,76 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _loadUserData();
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
     final doc = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .get();
-    setState(() {
-      name = doc.data()?['name'] ?? "";
-      location = doc.data()?['location'] ?? "";
-      bio = doc.data()?['bio'] ?? "";
-    });
+
+    final data = doc.data();
+    if (data != null) {
+      setState(() {
+        name = data['name'] ?? "";
+        location = data['location'];
+        bio = data['bio'];
+      });
+    }
   }
 
   Future<void> _editField(String field, String? currentValue) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
     TextEditingController controller = TextEditingController(
-      text: currentValue ?? "",
+      text: currentValue,
     );
+
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Edit $field"),
+        title: Text("Edit $field".tr),
         content: TextField(controller: controller),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text("Cancel")),
+          TextButton(onPressed: () => Get.back(), child: Text("cancel".tr)),
           TextButton(
             onPressed: () async {
-              await FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(user.uid)
-                  .update({field.toLowerCase(): controller.text.trim()});
-              setState(() {
-                if (field == "Name") name = controller.text.trim();
-                if (field == "Location") location = controller.text.trim();
-                if (field == "Bio") bio = controller.text.trim();
-              });
-              Get.back();
+              try {
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .update({field.toLowerCase(): controller.text.trim()});
+
+                if (mounted) {
+                  setState(() {
+                    switch (field) {
+                      case "Name":
+                        name = controller.text.trim();
+                        break;
+                      case "Location":
+                        location = controller.text.trim();
+                        break;
+                      case "Bio":
+                        bio = controller.text.trim();
+                        break;
+                    }
+                  });
+                }
+                Get.back();
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Error updating: $e')));
+                }
+              }
             },
-            child: const Text("Save"),
+            child: Text("save".tr),
           ),
         ],
       ),
@@ -68,7 +98,7 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Personal Information".tr)),
+      appBar: AppBar(title: Text("personal_info".tr), centerTitle: true),
       body: ListView(
         children: [
           ListTile(

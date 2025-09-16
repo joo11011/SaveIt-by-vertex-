@@ -28,7 +28,7 @@ class ExpenseItem extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         leading: CircleAvatar(
           radius: 25,
-          backgroundColor: color.withOpacity(0.2),
+          backgroundColor: color.withAlpha((0.2 * 255).round()),
           child: Icon(icon, color: color, size: 28),
         ),
         title: Text(

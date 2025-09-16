@@ -1,3 +1,4 @@
+// Refactored lib/view/Add_new_income_screen/widgets/source_of_money.dart
 import 'package:flutter/material.dart';
 import 'package:get/get_utils/src/extensions/internacionalization.dart';
 
@@ -14,6 +15,12 @@ class Sourceofmoney extends StatelessWidget {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
       onSaved: onsaved,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter a source of income'.tr;
+        }
+        return null;
+      },
     );
   }
 }

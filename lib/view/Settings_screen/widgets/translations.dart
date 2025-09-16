@@ -24,7 +24,6 @@ class AppTranslations extends Translations {
       'Name': 'Name',
       'City': 'City',
       'bio': 'bio',
-      "Personal Information": "Personal Information",
       'general': 'General',
       'more': 'More',
       'account': 'Account',
@@ -35,7 +34,6 @@ class AppTranslations extends Translations {
       'light': 'light',
       'english': 'English',
       'arabic': 'Arabic',
-      'Personal Information': 'Personal Information',
       'If you face any issues, please contact us at:\n\nsupport@saveit.com\n\nWe are happy to help you anytime!':
           'If you face any issues, please contact us at:\n\nsupport@saveit.com\n\nWe are happy to help you anytime!',
       'SaveIt App\n\nThis application helps you track expenses and manage your budget.\n\nVersion: 1.0.0':
@@ -106,21 +104,15 @@ class AppTranslations extends Translations {
       //dashboard
       'expenses': 'Expenses',
       'savings': 'Savings',
-      'installments': 'Installments',
-
       // Balance
       'remaining_balance': 'Remaining Balance',
       'Balance': 'Balance',
       'Your Balance': 'Your Balance',
-      'savings': 'Savings',
-
       // Home Screen
       'hello': 'Hello...',
       'hello_user': 'Hello, User',
       'hello_name': 'Hello, @name 👋',
-      'home': 'Home',
       'saveit_chat': 'SaveIt Chat',
-      'profile': 'Profile',
     },
 
     'ar': {
@@ -143,7 +135,6 @@ class AppTranslations extends Translations {
       'Name': 'الاسم',
       'City': 'المدينة',
       'bio': 'الوصف',
-      "Personal Information": "المعلومات الشخصية",
       'general': 'عام',
       'more': 'المزيد',
       'account': 'الحساب',
@@ -154,7 +145,6 @@ class AppTranslations extends Translations {
       'light': 'وضع الاضاءة',
       'english': 'الإنجليزية',
       'arabic': 'العربية',
-      'Personal Information': 'المعلومات الشخصية',
       'If you face any issues, please contact us at:\n\nsupport@saveit.com\n\nWe are happy to help you anytime!':
           'إذا واجهت أي مشكلة، يرجى التواصل معنا على:\n\nsupport@saveit.com\n\nنحن سعداء بمساعدتك في أي وقت!',
       'SaveIt App\n\nThis application helps you track expenses and manage your budget.\n\nVersion: 1.0.0':
@@ -225,19 +215,15 @@ class AppTranslations extends Translations {
       //dashboard
       'expenses': 'المصاريف',
       'savings': 'المدخرات',
-      'installments': 'الأقساط',
       // Balance
       'remaining_balance': 'الرصيد المتبقي',
       'Balance': 'الرصيد',
       'Your Balance': 'رصيدك',
-      'savings': 'المدخرات',
       // Home Screen
       'hello': 'مرحباً...',
       'hello_user': 'مرحباً، مستخدم',
       'hello_name': 'مرحباً، @name 👋',
-      'home': 'الرئيسية',
       'saveit_chat': 'دردشة SaveIt',
-      'profile': 'الملف الشخصي',
     },
   };
 }

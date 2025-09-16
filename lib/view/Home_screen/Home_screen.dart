@@ -3,11 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:savelt_app/controller/settings_controller.dart';
+import 'package:savelt_app/view/Settings_screen/Settings_screen.dart';
 import 'package:savelt_app/view/Home_screen/widgets/dashboard_content.dart';
 import 'package:savelt_app/view/Profile_screen/Profile_screen.dart';
 import 'package:savelt_app/view/SaveIt_chat_screen/SaveIt_chat_screen.dart';
 import 'package:savelt_app/view/Settings_screen/Settings_screen.dart';
-import 'package:savelt_app/model/installment_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -113,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: const Icon(Icons.settings, color: Colors.white),
                   onPressed: () {
                     Get.to(
-                      () => const SettingsPage(),
+                      () => const SettingsScreen(),
                       binding: BindingsBuilder(() {
                         Get.put(SettingsController());
                       }),

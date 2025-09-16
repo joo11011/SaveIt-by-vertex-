@@ -111,7 +111,7 @@ class RegisterPage extends StatelessWidget {
                               : Icons.visibility_off,
                         ),
                         style: ButtonStyle(
-                          iconColor: MaterialStatePropertyAll(Colors.green),
+                          iconColor: WidgetStatePropertyAll(Colors.green),
                         ),
                         onPressed: controller.togglePasswordVisibility,
                       ),
@@ -157,7 +157,7 @@ class RegisterPage extends StatelessWidget {
                               : Icons.visibility_off,
                         ),
                         style: ButtonStyle(
-                          iconColor: MaterialStatePropertyAll(Colors.green),
+                          iconColor: WidgetStatePropertyAll(Colors.green),
                         ),
                         onPressed: controller.toggleConfirmPasswordVisibility,
                       ),

@@ -1,4 +1,4 @@
-import 'package:firebase_core/firebase_core.dart';
+// Refactored lib/view/Add_new_income_screen/Add_new_income_screen.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_utils/get_utils.dart';
@@ -8,6 +8,8 @@ import 'package:savelt_app/view/Add_new_income_screen/widgets/date.dart';
 import 'package:savelt_app/view/Add_new_income_screen/widgets/note.dart';
 import 'package:savelt_app/view/Add_new_income_screen/widgets/source_of_money.dart';
 import 'package:savelt_app/view/Income_screen/Income_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/income_service.dart';
 
 class AddNewIncomeScreen extends StatefulWidget {
   const AddNewIncomeScreen({super.key});
@@ -28,6 +30,7 @@ class _AddNewIncomeScreenState extends State<AddNewIncomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final IncomeService _incomeService = IncomeService();
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -81,25 +84,33 @@ class _AddNewIncomeScreenState extends State<AddNewIncomeScreen> {
               SizedBox(height: 30),
               Addincomebutton(
                 onpressed: () async {
-                  _fkey.currentState?.save();
-                  if (sourcemoney.isEmpty || amount == 0 || date == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Please add all required fields")),
-                    );
-                    return;
+                  if (_fkey.currentState!.validate()) {
+                    _fkey.currentState!.save();
+                    if (sourcemoney.isEmpty || amount == 0 || date == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Please add all required fields")),
+                      );
+                      return;
+                    }
+
+                    try {
+                      await _incomeService.addIncome(
+                        title: sourcemoney,
+                        amount: amount,
+                        category: '',
+                        currency: currency,
+                        notes: note,
+                      );
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => income_screen()),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to add income: $e')),
+                      );
+                    }
                   }
-                  await FirebaseFirestore.instance.collection('incomes').add({
-                    'source_of_money': sourcemoney,
-                    'currency': currency,
-                    'amount': amount,
-                    'date': date!.toIso8601String(),
-                    'note': note,
-                    'createdAt': FieldValue.serverTimestamp(),
-                  });
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => income_screen()),
-                  );
                 },
               ),
             ],

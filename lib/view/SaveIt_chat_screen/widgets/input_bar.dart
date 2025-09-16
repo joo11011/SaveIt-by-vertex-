@@ -1,4 +1,6 @@
+// Refactored lib/view/SaveIt_chat_screen/widgets/input_bar.dart
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class InputBar extends StatefulWidget {
   final Future<void> Function(String) onSend;
@@ -38,7 +40,7 @@ class _InputBarState extends State<InputBar> {
               style: const TextStyle(fontSize: 15),
               decoration: InputDecoration(
                 icon: Icon(Icons.message, color: Colors.grey),
-                hintText: 'اكتب رسالتك...',
+                hintText: 'saveit_chat'.tr, // Using translation key
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(

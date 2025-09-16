@@ -5,11 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:savelt_app/view/Home_screen/Home_screen.dart';
 import '../Home_screen/Home_screen.dart';
-import '../Settings_screen/Settings_screen.dart';
 import 'widgets/personal_info.dart';
-import '../Log_in_screen/Log_in_screen.dart';
 import 'widgets/delete_account_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -110,7 +107,14 @@ class _ProfilePageState extends State<ProfilePage> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          var userData = snapshot.data!.data() as Map<String, dynamic>;
+          // 🔹 معالجة null
+          var userDataRaw = snapshot.data!.data();
+          if (userDataRaw == null || userDataRaw is! Map<String, dynamic>) {
+            return const Center(child: Text("No user data found"));
+          }
+
+          var userData = userDataRaw;
+
           String name = userData['name'] ?? "Unknown";
           String email = user.email ?? "";
           String? photoUrl = userData['photoUrl'];
@@ -186,18 +190,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   icon: Icons.person_outlined,
                   titleKey: "personal_info",
                   onTap: () => Get.to(() => const PersonalInfoPage()),
-                ),
-
-                _buildProfileOption(
-                  icon: Icons.lock_outline,
-                  titleKey: "login_password",
-                  onTap: () => Get.to(() => LoginPage()),
-                ),
-
-                _buildProfileOption(
-                  icon: Icons.shield_outlined,
-                  titleKey: "privacy_security",
-                  onTap: () {},
                 ),
 
                 _buildProfileOption(

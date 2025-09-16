@@ -1,125 +1,135 @@
+// Refactored lib/services/firebase_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../view/Installments_screen/Installments_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../model/installment_model.dart';
+import '../core/provider/firestore_service.dart';
+import 'base_service.dart';
 
-class FirebaseService {
-  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+class FirebaseService extends BaseService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Collection name for installments
+  String? get _userId => _auth.currentUser?.uid;
+
   static const String _installmentsCollection = 'installments';
 
-  // Get installments stream
-  static Stream<List<Installment>> getInstallmentsStream() {
+  /// Stream installments for current user
+  Stream<List<InstallmentModel>> getInstallmentsStream() {
+    if (_userId == null) return Stream.value([]);
     return _firestore
+        .collection('users')
+        .doc(_userId)
         .collection(_installmentsCollection)
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((doc) {
             final data = doc.data();
-            return Installment(
+            return InstallmentModel(
               id: doc.id,
-              title: data['title'] ?? '',
-              dueDate: data['dueDate'] ?? '',
-              amount: (data['amount'] ?? 0).toDouble(),
-              status: data['status'] ?? 'upcoming',
-              icon: IconData(
-                data['icon'] ?? Icons.receipt.codePoint,
-                fontFamily: 'MaterialIcons',
-              ),
-              iconColor: Color(data['iconColor'] ?? Colors.grey.value),
-              timeStatus: data['timeStatus'] ?? '',
+              installmentName: data['installmentName'] ?? data['title'] ?? '',
+              dueDate: (data['dueDate'] as Timestamp).toDate(),
+              totalAmount: (data['totalAmount'] ?? data['amount'] ?? 0)
+                  .toDouble(),
               category: data['category'] ?? '',
               notes: data['notes'] ?? '',
+              currency: data['currency'] ?? 'USD',
+              isPaid: data['isPaid'] ?? (data['status'] == 'paid'),
+              paidDate: data['paidDate'] != null
+                  ? (data['paidDate'] as Timestamp).toDate()
+                  : null,
+              createdAt: (data['createdAt'] as Timestamp).toDate(),
+              icon: data['icon'] != null
+                  ? IconData(data['icon'], fontFamily: 'MaterialIcons')
+                  : null,
+              iconColor: data['iconColor'] != null
+                  ? Color(data['iconColor'] as int)
+                  : null,
+              timeStatus: data['timeStatus'] ?? '',
             );
           }).toList();
         });
   }
 
-  // Add new installment
-  static Future<String> addInstallment(Installment installment) async {
-    final docRef = await _firestore.collection(_installmentsCollection).add({
-      'title': installment.title,
-      'dueDate': installment.dueDate,
-      'amount': installment.amount,
-      'status': installment.status,
-      'icon': installment.icon.codePoint,
-      'iconColor': installment.iconColor.value,
-      'timeStatus': installment.timeStatus,
-      'category': installment.category,
-      'notes': installment.notes,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-
+  /// Add a new installment
+  Future<String> addInstallment(InstallmentModel installment) async {
+    if (_userId == null) throw Exception('User not authenticated');
+    final docRef = await _firestore
+        .collection('users')
+        .doc(_userId)
+        .collection(_installmentsCollection)
+        .add({
+          'installmentName': installment.installmentName,
+          'dueDate': installment.dueDate,
+          'totalAmount': installment.totalAmount,
+          'category': installment.category,
+          'notes': installment.notes,
+          'currency': installment.currency,
+          'isPaid': installment.isPaid,
+          'paidDate': installment.paidDate,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'icon': installment.icon?.codePoint,
+          'iconColor': installment.iconColor?.value,
+          'timeStatus': installment.timeStatus,
+        });
+    await FirestoreService().updateUserFinancials();
     return docRef.id;
   }
 
-  // Update installment status
-  static Future<void> updateInstallmentStatus(
-    String id,
-    String newStatus,
-  ) async {
-    final updateData = {
-      'status': newStatus,
-      'updatedAt': FieldValue.serverTimestamp(),
-    };
-
-    if (newStatus == 'paid') {
-      final now = DateTime.now();
-      updateData['dueDate'] =
-          'Paid on ${now.day}th ${_getMonthName(now.month)}';
-      updateData['timeStatus'] = '';
-    }
-
+  /// Update installment status (paid/unpaid)
+  Future<void> updateInstallmentStatus(String id, bool isPaid) async {
+    if (_userId == null) throw Exception('User not authenticated');
     await _firestore
+        .collection('users')
+        .doc(_userId)
         .collection(_installmentsCollection)
         .doc(id)
-        .update(updateData);
+        .update({
+          'isPaid': isPaid,
+          'paidDate': isPaid ? FieldValue.serverTimestamp() : null,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+    await FirestoreService().updateUserFinancials();
   }
 
-  // Update installment
-  static Future<void> updateInstallment(Installment installment) async {
+  /// Update installment details
+  Future<void> updateInstallment(InstallmentModel installment) async {
+    if (_userId == null) throw Exception('User not authenticated');
     if (installment.id == null) return;
 
     await _firestore
+        .collection('users')
+        .doc(_userId)
         .collection(_installmentsCollection)
         .doc(installment.id!)
         .update({
-          'title': installment.title,
+          'installmentName': installment.installmentName,
           'dueDate': installment.dueDate,
-          'amount': installment.amount,
-          'status': installment.status,
-          'icon': installment.icon.codePoint,
-          'iconColor': installment.iconColor.value,
-          'timeStatus': installment.timeStatus,
+          'totalAmount': installment.totalAmount,
           'category': installment.category,
           'notes': installment.notes,
+          'currency': installment.currency,
+          'isPaid': installment.isPaid,
+          'paidDate': installment.paidDate,
+          'icon': installment.icon?.codePoint,
+          'iconColor': installment.iconColor?.value,
+          'timeStatus': installment.timeStatus,
           'updatedAt': FieldValue.serverTimestamp(),
         });
+    await FirestoreService().updateUserFinancials();
   }
 
-  // Delete installment
-  static Future<void> deleteInstallment(String id) async {
-    await _firestore.collection(_installmentsCollection).doc(id).delete();
-  }
-
-  // Helper method to get month name
-  static String _getMonthName(int month) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return months[month - 1];
+  /// Delete an installment
+  Future<void> deleteInstallment(String id) async {
+    if (_userId == null) throw Exception('User not authenticated');
+    await _firestore
+        .collection('users')
+        .doc(_userId)
+        .collection(_installmentsCollection)
+        .doc(id)
+        .delete();
+    await FirestoreService().updateUserFinancials();
   }
 }
